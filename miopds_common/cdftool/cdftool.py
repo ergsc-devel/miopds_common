@@ -82,7 +82,7 @@ class cdfinfo:
             self.var_info[zvarnm] = {
                 'var_no':vdr.variable_number,
                 'data_type':vdr.data_type,
-                'max_rec':vdr.max_rec,
+                'max_rec':vdr.max_rec+1,
                 'offset_for_block':vvr_offsets[0],
                 'offset_for_var':vvr_offsets[0] + 8 + 4,   ## block size (8) + section type (4)
             }
