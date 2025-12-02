@@ -36,7 +36,7 @@ def get_file_info(file_path: str) -> dict:
             md5_hash.update(chunk)
 
     return {
-        "creation time": creation time,
+        "creation_time": creation_time,
         "size": size,
         "md5": md5_hash.hexdigest()
     }
