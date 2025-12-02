@@ -26,7 +26,7 @@ def get_file_info(file_path: str) -> dict:
     # Get file stamp
     file_stat = os.stat(file_path)
     file_stamp = file_stat.st_ctime
-    creation time = datetime.fromtimestamp(file_stamp).isoformat() # ISO format
+    creation_time = datetime.fromtimestamp(file_stamp).isoformat() # ISO format
 
 
     # Get md5 chksum value for the input file
