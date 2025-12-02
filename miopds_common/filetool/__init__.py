@@ -1,1 +1,1 @@
-from . import filetool
+from .filetool import get_file_info
