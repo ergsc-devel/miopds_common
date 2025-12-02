@@ -31,7 +31,7 @@ def get_file_info(file_path: str) -> dict:
 
     # Get md5 chksum value for the input file
     md5_hash = hashlib.md5()
-    with open(filepath, "rb") as f:
+    with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             md5_hash.update(chunk)
 
