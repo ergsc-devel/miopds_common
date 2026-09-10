@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Schema and Schematron references used by this label.
+
+  ADAPTATION NOTE:
+  Review all schema and Schematron versions when applying this template to
+  another mission, archive release, information-model version, or local data
+  dictionary. Remove unused namespaces and add any dictionaries required by
+  the target product.
+-->
+<?xml-model href="https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+
+<Product_Observational
+    xmlns="http://pds.nasa.gov/pds4/pds/v1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:msn="http://pds.nasa.gov/pds4/msn/v1"
+    xmlns:psa="http://psa.esa.int/psa/v1"
+    xmlns:bc="http://psa.esa.int/psa/bc/v1"
+    xsi:schemaLocation="
+      http://pds.nasa.gov/pds4/pds/v1 https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.xsd
+      http://pds.nasa.gov/pds4/msn/v1 https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.xsd
+      http://psa.esa.int/psa/v1 https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.xsd
+      http://psa.esa.int/psa/bc/v1 https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.xsd">
+
+  <!--
+    Values in Identification_Area are supplied by the renderer from the CDF
+    file, command-line options, or calculated file metadata.
+
+    ADAPTATION NOTE:
+    For another product family, verify the LID namespace and product ID,
+    versioning policy, title convention, information-model version,
+    publication year, description, and modification-history wording.
+    The generated label file name must also comply with the archive naming
+    rules and remain consistent with the LID and VID.
+  -->
+  <Identification_Area>
+    <logical_identifier>{{ logical_identifier }}</logical_identifier>
+    <version_id>{{ version_id }}</version_id>
+    <title>{{ title }} for {{ yyyymmdd }}</title>
+    <information_model_version>{{ information_model_version }}</information_model_version>
+    <product_class>Product_Observational</product_class>
+
+    <Citation_Information>
+      <!--
+        author_list is intentionally omitted because the validator reports it
+        as deprecated for the model currently used by this project.
+
+        ADAPTATION NOTE:
+        Confirm the applicable citation requirements for the target archive.
+      -->
+      <publication_year>{{ publication_year }}</publication_year>
+      <description>{{ description }}</description>
+    </Citation_Information>
+
+    <Modification_History>
+      <Modification_Detail>
+        <modification_date>{{ modification_date }}</modification_date>
+        <version_id>{{ version_id }}</version_id>
+        <description>{{ modification_description }}</description>
+      </Modification_Detail>
+    </Modification_History>
+  </Identification_Area>
+
+  <!--
+    Observation_Area combines values read from the CDF with mission-specific
+    metadata currently fixed for BepiColombo MMO PWI EFD calibrated products.
+
+    ADAPTATION NOTE:
+    The purpose, processing level, science facets, investigation, observing
+    system, target, mission phase, processing context, and context-product
+    LIDs must be reviewed before this template is used for another data type,
+    processing level, instrument, spacecraft, mission, or target.
+  -->
+  <Observation_Area>
+    <!--
+      The renderer normally obtains these values from the first and last
+      entries of the selected CDF time-string variable.
+
+      ADAPTATION NOTE:
+      If another CDF uses TT2000 only, a differently named time variable, or
+      another time representation, update the renderer and its arguments.
+    -->
+    <Time_Coordinates>
+      <start_date_time>{{ start_time }}</start_date_time>
+      <stop_date_time>{{ stop_time }}</stop_date_time>
+    </Time_Coordinates>
+
+    <!--
+      ADAPTATION NOTE:
+      These values describe calibrated electric-field wave products. Change
+      them when the product is raw, partially processed, derived, magnetic,
+      particle-related, radio-related, or otherwise scientifically different.
+    -->
+    <Primary_Result_Summary>
+      <purpose>Science</purpose>
+      <processing_level>Calibrated</processing_level>
+      <Science_Facets>
+        <wavelength_range nilReason="inapplicable" xsi:nil="true"/>
+        <domain>Heliosphere</domain>
+        <domain>Magnetosphere</domain>
+        <discipline_name>Fields</discipline_name>
+        <facet1>Electric</facet1>
+        <facet2>Waves</facet2>
+      </Science_Facets>
+    </Primary_Result_Summary>
+
+    <!--
+      ADAPTATION NOTE:
+      Replace the investigation name, type, LID, and reference type when this
+      template is used outside the BepiColombo mission.
+    -->
+    <Investigation_Area>
+      <name>BepiColombo</name>
+      <type>Mission</type>
+      <Internal_Reference>
+        <lid_reference>urn:esa:psa:context:investigation:mission.bc</lid_reference>
+        <reference_type>data_to_investigation</reference_type>
+      </Internal_Reference>
+    </Investigation_Area>
+
+    <!--
+      The context-product LIDs are supplied through renderer arguments.
+
+      ADAPTATION NOTE:
+      Change the displayed host and instrument names as well as the supplied
+      context LIDs for another spacecraft or instrument. Confirm that the
+      referenced context products are registered and available to Validate.
+    -->
+    <Observing_System>
+      <Observing_System_Component>
+        <name>Mercury Magnetospheric Orbiter</name>
+        <type>Host</type>
+        <Internal_Reference>
+          <lid_reference>{{ instrument_host_lid }}</lid_reference>
+          <reference_type>is_instrument_host</reference_type>
+        </Internal_Reference>
+      </Observing_System_Component>
+      <Observing_System_Component>
+        <name>PWI</name>
+        <type>Instrument</type>
+        <Internal_Reference>
+          <lid_reference>{{ instrument_lid }}</lid_reference>
+          <reference_type>is_instrument</reference_type>
+        </Internal_Reference>
+      </Observing_System_Component>
+    </Observing_System>
+
+    <!--
+      ADAPTATION NOTE:
+      Change the target name, type, context-product LID, and reference type for
+      products observing another target or multiple targets.
+    -->
+    <Target_Identification>
+      <name>Mercury</name>
+      <type>Planet</type>
+      <Internal_Reference>
+        <lid_reference>urn:nasa:pds:context:target:planet.mercury</lid_reference>
+        <reference_type>data_to_target</reference_type>
+      </Internal_Reference>
+    </Target_Identification>
+
+    <!--
+      Mission-specific PSA metadata.
+
+      ADAPTATION NOTE:
+      Change the mission phase and processing-input definition as required.
+      If the target archive does not use the PSA dictionary, this complete
+      Mission_Area block and the psa namespace may need to be replaced or
+      removed according to the applicable data dictionary.
+    -->
+    <Mission_Area>
+      <psa:Mission_Information>
+        <psa:spacecraft_clock_start_count>{{ sclk_start }}</psa:spacecraft_clock_start_count>
+        <psa:spacecraft_clock_stop_count>{{ sclk_stop }}</psa:spacecraft_clock_stop_count>
+        <psa:Mission_Phase>
+          <psa:name>Science</psa:name>
+          <psa:id>science</psa:id>
+        </psa:Mission_Phase>
+      </psa:Mission_Information>
+
+      <psa:Processing_Context>
+        <psa:processing_software_title>{{ processing_software_title }}</psa:processing_software_title>
+        <psa:processing_software_version>{{ processing_software_version }}</psa:processing_software_version>
+        <psa:Processing_Inputs>
+          <psa:Processing_Input_Identification>
+            <psa:type>PDS product</psa:type>
+            <psa:file_name>{{ source_file }}</psa:file_name>
+          </psa:Processing_Input_Identification>
+        </psa:Processing_Inputs>
+      </psa:Processing_Context>
+    </Mission_Area>
+
+    <!--
+      ADAPTATION NOTE:
+      Keep the mission phase consistent with the PSA Mission_Area above. If
+      another mission dictionary is used, update or remove this block and its
+      namespace according to that dictionary.
+    -->
+    <Discipline_Area>
+      <msn:Mission_Information>
+        <msn:mission_phase_name>Science</msn:mission_phase_name>
+        <msn:spacecraft_clock_start>{{ sclk_start }}</msn:spacecraft_clock_start>
+        <msn:spacecraft_clock_stop>{{ sclk_stop }}</msn:spacecraft_clock_stop>
+      </msn:Mission_Information>
+    </Discipline_Area>
+  </Observation_Area>
+
+  <File_Area_Observational>
+    <!--
+      These File values are obtained from the actual CDF file. The renderer
+      calculates the file size and MD5 checksum at generation time.
+    -->
+    <File>
+      <file_name>{{ cdf_file_name }}</file_name>
+      <creation_date_time>{{ cdf_creation_time }}</creation_date_time>
+      <file_size unit="byte">{{ cdf_size }}</file_size>
+      <md5_checksum>{{ cdf_md5 }}</md5_checksum>
+    </File>
+
+    <!--
+      ADAPTATION NOTE:
+      Confirm the CDF version, parsing standard, and actual header length for
+      every product family. The current default header length is supplied by
+      the renderer and must not be assumed to be valid for every CDF file.
+    -->
+    <Header>
+      <offset unit="byte">0</offset>
+      <object_length unit="byte">{{ cdf_header_length }}</object_length>
+      <parsing_standard_id>CDF 3.4 ISTP/IACG</parsing_standard_id>
+    </Header>
+
+    <!--
+      Array and table definitions are generated dynamically from CDF variable
+      metadata and are emitted in ascending physical-offset order.
+
+      ADAPTATION NOTE:
+      Review the renderer's CDF-to-PDS data-type mapping, axis construction,
+      DEPEND_n handling, character-variable handling, units, descriptions,
+      and special constants before using this block with another product
+      family. Not every CDF character variable is an ASCII date-time field,
+      and not every numeric CDF variable can be represented by the same Array
+      rules without product-specific interpretation.
+    -->
+{% for obj in data_objects %}
+{% if obj.kind == 'Table_Binary' %}
+    <!--
+      Character-variable representation.
+
+      ADAPTATION NOTE:
+      ASCII_Date_Time_YMD is appropriate only when the CDF character variable
+      contains date-time strings in the corresponding format. For other text
+      variables, change the PDS4 object class, data type, field structure, and
+      record length in both the renderer and this block.
+    -->
+    <Table_Binary>
+      <name>{{ obj.name }}</name>
+      <local_identifier>{{ obj.name }}</local_identifier>
+      <offset unit="byte">{{ obj.offset }}</offset>
+      <records>{{ obj.records }}</records>
+      <description>{{ obj.description }}</description>
+      <Record_Binary>
+        <fields>1</fields>
+        <groups>0</groups>
+        <record_length unit="byte">{{ obj.record_length }}</record_length>
+        <Field_Binary>
+          <name>{{ obj.name }}</name>
+          <field_location unit="byte">1</field_location>
+          <data_type>ASCII_Date_Time_YMD</data_type>
+          <field_length unit="byte">{{ obj.record_length }}</field_length>
+        </Field_Binary>
+      </Record_Binary>
+    </Table_Binary>
+{% else %}
+    <!--
+      Numeric-variable representation.
+
+      ADAPTATION NOTE:
+      Confirm pds_data_type, axis order, axis names, element counts, unit, and
+      special constants against the actual CDF variable and PDS requirements.
+      In particular, do not copy VALIDMIN or VALIDMAX blindly when the CDF
+      attributes do not describe the actual archived values correctly.
+    -->
+    <Array>
+      <name>{{ obj.name }}</name>
+      <local_identifier>{{ obj.name }}</local_identifier>
+      <offset unit="byte">{{ obj.offset }}</offset>
+      <axes>{{ obj.axes | length }}</axes>
+      <axis_index_order>Last Index Fastest</axis_index_order>
+      <description>{{ obj.description }}</description>
+
+      <Element_Array>
+        <data_type>{{ obj.pds_data_type }}</data_type>
+{% if obj.unit %}
+        <unit>{{ obj.unit }}</unit>
+{% endif %}
+      </Element_Array>
+
+{% for axis in obj.axes %}
+      <Axis_Array>
+        <axis_name>{{ axis.name }}</axis_name>
+        <elements>{{ axis.elements }}</elements>
+        <sequence_number>{{ loop.index }}</sequence_number>
+      </Axis_Array>
+{% endfor %}
+
+      <!--
+        Empty special constants are omitted. Confirm that each emitted value
+        is legal for the selected PDS4 data type.
+      -->
+      <Special_Constants>
+{% if obj.fillval is not none and obj.fillval != '' %}
+        <invalid_constant>{{ obj.fillval }}</invalid_constant>
+{% endif %}
+{% if obj.validmax is not none and obj.validmax != '' %}
+        <valid_maximum>{{ obj.validmax }}</valid_maximum>
+{% endif %}
+{% if obj.validmin is not none and obj.validmin != '' %}
+        <valid_minimum>{{ obj.validmin }}</valid_minimum>
+{% endif %}
+      </Special_Constants>
+    </Array>
+{% endif %}
+{% endfor %}
+  </File_Area_Observational>
+</Product_Observational>
