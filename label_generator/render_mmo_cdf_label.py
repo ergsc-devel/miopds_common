@@ -144,6 +144,33 @@ def field(info, *names, default=None):
     return default
 
 
+
+def version_from_cdf_name(name: str) -> tuple[int, int]:
+    """Extract the label major/minor version from a CDF name such as v02-00."""
+    match = re.search(r"_r\d+-v(\d+)-(\d+)\.cdf$", name, re.IGNORECASE)
+    if not match:
+        raise ValueError(
+            "Could not extract the CDF version from file name. "
+            f"Expected ..._rNN-vNN-NN.cdf: {name}"
+        )
+    return int(match.group(1)), int(match.group(2))
+
+
+def product_id_from_lid(logical_identifier: str) -> str:
+    """Return the final product-ID component of a PDS4 logical identifier."""
+    product_id = logical_identifier.rstrip(":").rsplit(":", 1)[-1].strip()
+    if not product_id:
+        raise ValueError("The logical identifier does not contain a product ID")
+    return product_id
+
+
+def label_name(logical_identifier: str, cdf_name: str) -> str:
+    """Build <product-id>__<major>_<minor>.lblx from the LID and CDF name."""
+    major, minor = version_from_cdf_name(cdf_name)
+    product_id = product_id_from_lid(logical_identifier)
+    return f"{product_id}__{major}_{minor}.lblx"
+
+
 def main() -> None:
     """Read the CDF, build the template context, and generate the LBLX file."""
     parser = argparse.ArgumentParser(
@@ -400,7 +427,9 @@ def main() -> None:
 
     # Create the output directory and render the final LBLX file.
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    output = args.output_dir / f"{cdf_path.stem}.lblx"
+    # Build the label file name from the final LID component and the CDF
+    # version token. Example: ..._r02-v02-00.cdf -> ...__2_0.lblx.
+    output = args.output_dir / label_name(logical_identifier, cdf_path.name)
     output.write_text(
         environment.get_template(template_path.name).render(**context),
         encoding="utf-8",
