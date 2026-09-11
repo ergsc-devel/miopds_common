@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<Product_Collection xmlns="http://pds.nasa.gov/pds4/pds/v1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:msn="http://pds.nasa.gov/pds4/msn/v1"
+  xmlns:psa="http://psa.esa.int/psa/v1"
+  xmlns:bc="http://psa.esa.int/psa/bc/v1"
+  xsi:schemaLocation="http://pds.nasa.gov/pds4/pds/v1 https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.xsd http://pds.nasa.gov/pds4/msn/v1 https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.xsd http://psa.esa.int/psa/v1 https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.xsd http://psa.esa.int/psa/bc/v1 https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.xsd">
+  <Identification_Area>
+    <logical_identifier>{{ collection_lid }}</logical_identifier>
+    <version_id>{{ version_id }}</version_id>
+    <title>{{ collection_title }}</title>
+    <information_model_version>{{ information_model_version }}</information_model_version>
+    <product_class>Product_Collection</product_class>
+    <Citation_Information>
+      <publication_year>{{ publication_year }}</publication_year>
+      <description>{{ citation_description }}</description>
+    </Citation_Information>
+    <Modification_History>
+      <Modification_Detail>
+        <modification_date>{{ modification_date }}</modification_date>
+        <version_id>{{ version_id }}</version_id>
+        <description>{{ modification_description }}</description>
+      </Modification_Detail>
+    </Modification_History>
+  </Identification_Area>
+  <Context_Area>
+    <Investigation_Area>
+      <name>BepiColombo</name>
+      <type>Mission</type>
+      <Internal_Reference>
+        <lid_reference>urn:esa:psa:context:investigation:mission.bc</lid_reference>
+        <reference_type>collection_to_investigation</reference_type>
+      </Internal_Reference>
+    </Investigation_Area>
+    <Observing_System>
+      <Observing_System_Component>
+        <name>PWI</name>
+        <type>Instrument</type>
+      </Observing_System_Component>
+    </Observing_System>
+  </Context_Area>
+  <Collection>
+    <collection_type>Document</collection_type>
+    <description>{{ collection_description }}</description>
+  </Collection>
+  <File_Area_Inventory>
+    <File>
+      <file_name>{{ inventory_file }}</file_name>
+      <file_size unit="byte">{{ file_size }}</file_size>
+      <md5_checksum>{{ md5_checksum }}</md5_checksum>
+    </File>
+    <Inventory>
+      <offset unit="byte">0</offset>
+      <object_length unit="byte">{{ file_size }}</object_length>
+      <parsing_standard_id>PDS DSV 1</parsing_standard_id>
+      <records>{{ records }}</records>
+      <record_delimiter>Carriage-Return Line-Feed</record_delimiter>
+      <field_delimiter>Comma</field_delimiter>
+      <Record_Delimited>
+        <fields>2</fields>
+        <groups>0</groups>
+        <Field_Delimited>
+          <name>Member Status</name>
+          <field_number>1</field_number>
+          <data_type>ASCII_String</data_type>
+          <maximum_field_length unit="byte">1</maximum_field_length>
+          <description>P indicates a primary member; S indicates a secondary member.</description>
+        </Field_Delimited>
+        <Field_Delimited>
+          <name>LIDVID_LID</name>
+          <field_number>2</field_number>
+          <data_type>ASCII_LIDVID_LID</data_type>
+          <maximum_field_length unit="byte">255</maximum_field_length>
+          <description>The LIDVID of a collection member product.</description>
+        </Field_Delimited>
+      </Record_Delimited>
+      <reference_type>inventory_has_member_product</reference_type>
+    </Inventory>
+  </File_Area_Inventory>
+</Product_Collection>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<Product_Document xmlns="http://pds.nasa.gov/pds4/pds/v1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:msn="http://pds.nasa.gov/pds4/msn/v1"
+  xmlns:psa="http://psa.esa.int/psa/v1"
+  xmlns:bc="http://psa.esa.int/psa/bc/v1"
+  xsi:schemaLocation="http://pds.nasa.gov/pds4/pds/v1 https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.xsd http://pds.nasa.gov/pds4/msn/v1 https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.xsd http://psa.esa.int/psa/v1 https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.xsd http://psa.esa.int/psa/bc/v1 https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.xsd">
+  <Identification_Area>
+    <logical_identifier>{{ document_lid }}</logical_identifier>
+    <version_id>{{ version_id }}</version_id>
+    <title>{{ title }}</title>
+    <information_model_version>{{ information_model_version }}</information_model_version>
+    <product_class>Product_Document</product_class>
+    <Citation_Information>
+      <publication_year>{{ publication_year }}</publication_year>
+      <description>{{ description }}</description>
+    </Citation_Information>
+    <Modification_History>
+      <Modification_Detail>
+        <modification_date>{{ modification_date }}</modification_date>
+        <version_id>{{ version_id }}</version_id>
+        <description>{{ modification_description }}</description>
+      </Modification_Detail>
+    </Modification_History>
+  </Identification_Area>
+  <Document>
+    <document_name>{{ title }}</document_name>
+    <publication_date>{{ publication_date }}</publication_date>
+    <Document_Edition>
+      <edition_name>{{ edition_name }}</edition_name>
+      <language>{{ language }}</language>
+      <files>1</files>
+      <Document_File>
+        <file_name>{{ pdf_file }}</file_name>
+        <document_standard_id>PDF/A</document_standard_id>
+      </Document_File>
+    </Document_Edition>
+  </Document>
+</Product_Document>
