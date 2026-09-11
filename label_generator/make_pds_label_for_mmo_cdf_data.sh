@@ -86,18 +86,19 @@ echo "Output directory  : $OUTPUT_DIR"
 echo "Renderer          : $RENDERER"
 
 # Arguments beginning with the fifth argument are passed to the Python renderer.
-python3 "$RENDERER" \
+RENDER_OUTPUT="$(python3 "$RENDERER" \
   "$CDF_FILE" \
   "$TEMPLATE_FILE" \
   "$OUTPUT_DIR" \
-  "${@:5}"
+  "${@:5}")"
 
-CDF_BASE="$(basename "$CDF_FILE")"
-CDF_STEM="${CDF_BASE%.[cC][dD][fF]}"
-GENERATED_LABEL="$OUTPUT_DIR/$CDF_STEM.lblx"
+printf '%s\n' "$RENDER_OUTPUT"
 
-[[ -f "$GENERATED_LABEL" ]] || {
-  echo "ERROR: Generated PDS label was not found: $GENERATED_LABEL" >&2
+# The renderer prints the final label path in the form "Generated   : PATH".
+GENERATED_LABEL="$(printf '%s\n' "$RENDER_OUTPUT" | sed -n 's/^Generated[[:space:]]*:[[:space:]]*//p' | tail -n 1)"
+
+[[ -n "$GENERATED_LABEL" && -f "$GENERATED_LABEL" ]] || {
+  echo "ERROR: Generated PDS label path could not be confirmed." >&2
   exit 1
 }
 
