@@ -22,17 +22,24 @@ TEMPLATE_DIR="${2:?ERROR: TEMPLATE_DIR is required.}"
 
 # Third argument: Jinja2 template file name.
 TEMPLATE_NAME="${3:?ERROR: TEMPLATE_NAME is required.}"
+
+# Build the full path to the Jinja2 template file.
 TEMPLATE_FILE="$TEMPLATE_DIR/$TEMPLATE_NAME"
 
 # Forth argument: output directory for the generated LBLX file.
 OUTPUT_DIR="${4:?ERROR: OUTPUT_DIR is required.}"
 
-# Python renderer used to generate the PDS4 label.
+# Python renderer that reads the CDF file and generates the PDS4 label.
+# Set the RENDERER environment variable to use another Python script.
 RENDERER="${RENDERER:-$SCRIPT_DIR/render_mmo_cdf_label.py}"
 
-# Directory containing the project-specific cdftool module.
+# Directory containing the project-specific cdftool Python module.
+# Set the CDFTOOL_DIR environment variable to use another location.
 CDFTOOL_DIR="${CDFTOOL_DIR:-/home/miosc/mio-sc/work_local/pds_pipeline/common/miopds_common/cdftool}"
 
+# Add both the cdftool directory and its parent directory to PYTHONPATH.
+# This supports either a cdftool.py module inside CDFTOOL_DIR or a cdftool
+# package imported from its parent directory. Preserve an existing PYTHONPATH.
 export PYTHONPATH="$CDFTOOL_DIR:$(dirname "$CDFTOOL_DIR")${PYTHONPATH:+:$PYTHONPATH}"
 
 [[ -f "$CDF_FILE" ]] || {
