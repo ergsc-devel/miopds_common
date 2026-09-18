@@ -1,0 +1,266 @@
+{%- set _compact_output = true %}
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  PDS4 observational label template for BepiColombo Mio CDF products.
+
+  ADAPTATION NOTE:
+  Confirm the PDS, MSN, PSA, and BepiColombo dictionary versions against the
+  XML catalog and archive release used for delivery. Remove unused namespaces
+  and dictionary references when a product does not use them.
+-->
+<?xml-model href="https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+
+<Product_Observational
+    xmlns="http://pds.nasa.gov/pds4/pds/v1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:msn="http://pds.nasa.gov/pds4/msn/v1"
+    xmlns:psa="http://psa.esa.int/psa/v1"
+    xmlns:bc="http://psa.esa.int/psa/bc/v1"
+    xsi:schemaLocation="
+      http://pds.nasa.gov/pds4/pds/v1 https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1M00.xsd
+      http://pds.nasa.gov/pds4/msn/v1 https://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1M00_1303.xsd
+      http://psa.esa.int/psa/v1 https://psa.esa.int/psa/v1/PDS4_PSA_1M00_1500.xsd
+      http://psa.esa.int/psa/bc/v1 https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.xsd">
+
+  <!--
+    Values in Identification_Area come from the CDF, renderer options, file
+    metadata, or the filename. Keep the generated filename, LID, VID, title,
+    and modification history consistent with the archive versioning policy.
+  -->
+  <Identification_Area>
+    <logical_identifier>{{ logical_identifier }}</logical_identifier>
+    <version_id>{{ version_id }}</version_id>
+    <title>{{ title }}</title>
+    <information_model_version>{{ information_model_version }}</information_model_version>
+    <product_class>Product_Observational</product_class>
+
+    <Citation_Information>
+      <publication_year>{{ publication_year }}</publication_year>
+      <description>{{ description }}</description>
+      <List_Author>
+{% for author in authors %}
+        <Person>
+          <display_full_name>{{ author.display_full_name }}</display_full_name>
+          <given_name>{{ author.given_name }}</given_name>
+          <family_name>{{ author.family_name }}</family_name>
+        </Person>
+{% endfor %}
+      </List_Author>
+    </Citation_Information>
+
+    <Modification_History>
+      <Modification_Detail>
+        <modification_date>{{ modification_date }}</modification_date>
+        <version_id>{{ version_id }}</version_id>
+        <description>{{ modification_description }}</description>
+      </Modification_Detail>
+    </Modification_History>
+  </Identification_Area>
+
+  <!--
+    Mission, target, science-facet, and context metadata must describe the
+    actual observation. Do not infer the target or mission phase solely from
+    the mission name.
+  -->
+  <Observation_Area>
+    <Time_Coordinates>
+      <start_date_time>{{ start_time }}</start_date_time>
+      <stop_date_time>{{ stop_time }}</stop_date_time>
+    </Time_Coordinates>
+
+    <Primary_Result_Summary>
+      <purpose>{{ purpose }}</purpose>
+      <processing_level>{{ processing_level }}</processing_level>
+      <Science_Facets>
+        <wavelength_range nilReason="inapplicable" xsi:nil="true"/>
+{% for domain in domains %}
+        <domain>{{ domain }}</domain>
+{% endfor %}
+        <discipline_name>{{ discipline_name }}</discipline_name>
+{% if facet1 %}
+        <facet1>{{ facet1 }}</facet1>
+{% endif %}
+{% if facet2 %}
+        <facet2>{{ facet2 }}</facet2>
+{% endif %}
+      </Science_Facets>
+    </Primary_Result_Summary>
+
+    <Investigation_Area>
+      <name>{{ investigation_name }}</name>
+      <type>{{ investigation_type }}</type>
+      <Internal_Reference>
+        <lid_reference>{{ investigation_lid }}</lid_reference>
+        <reference_type>data_to_investigation</reference_type>
+      </Internal_Reference>
+    </Investigation_Area>
+
+    <Observing_System>
+      <Observing_System_Component>
+        <name>{{ instrument_host_name }}</name>
+        <type>Host</type>
+        <Internal_Reference>
+          <lid_reference>{{ instrument_host_lid }}</lid_reference>
+          <reference_type>is_instrument_host</reference_type>
+        </Internal_Reference>
+      </Observing_System_Component>
+      <Observing_System_Component>
+        <name>{{ instrument_name }}</name>
+        <type>Instrument</type>
+        <Internal_Reference>
+          <lid_reference>{{ instrument_lid }}</lid_reference>
+          <reference_type>is_instrument</reference_type>
+        </Internal_Reference>
+      </Observing_System_Component>
+    </Observing_System>
+
+    <!-- Confirm the target for each cruise observation before delivery. -->
+    <Target_Identification>
+      <name>{{ target_name }}</name>
+      <type>{{ target_type }}</type>
+      <Internal_Reference>
+        <lid_reference>{{ target_lid }}</lid_reference>
+        <reference_type>data_to_target</reference_type>
+      </Internal_Reference>
+    </Target_Identification>
+
+    <Mission_Area>
+      <psa:Mission_Information>
+        <psa:spacecraft_clock_start_count>{{ sclk_start }}</psa:spacecraft_clock_start_count>
+        <psa:spacecraft_clock_stop_count>{{ sclk_stop }}</psa:spacecraft_clock_stop_count>
+        <psa:Mission_Phase>
+          <psa:name>{{ mission_phase_name }}</psa:name>
+          <psa:id>{{ mission_phase_id }}</psa:id>
+        </psa:Mission_Phase>
+      </psa:Mission_Information>
+
+      <psa:Processing_Context>
+        <psa:processing_software_title>{{ processing_software_title }}</psa:processing_software_title>
+        <psa:processing_software_version>{{ processing_software_version }}</psa:processing_software_version>
+        <psa:Processing_Inputs>
+          <psa:Processing_Input_Identification>
+            <psa:type>PDS product</psa:type>
+            <psa:file_name>{{ source_file }}</psa:file_name>
+          </psa:Processing_Input_Identification>
+        </psa:Processing_Inputs>
+      </psa:Processing_Context>
+    </Mission_Area>
+
+    <Discipline_Area>
+      <msn:Mission_Information>
+        <msn:mission_phase_name>{{ mission_phase_name }}</msn:mission_phase_name>
+        <msn:spacecraft_clock_start>{{ sclk_start }}</msn:spacecraft_clock_start>
+        <msn:spacecraft_clock_stop>{{ sclk_stop }}</msn:spacecraft_clock_stop>
+      </msn:Mission_Information>
+    </Discipline_Area>
+  </Observation_Area>
+
+  <!--
+    Reference_List contains related documents, calibration products, SPICE
+    kernels, and source products not already referenced elsewhere.
+  -->
+{% if internal_references %}
+  <Reference_List>
+{% for reference in internal_references %}
+    <Internal_Reference>
+{% if reference.lidvid_reference is defined %}
+      <lidvid_reference>{{ reference.lidvid_reference }}</lidvid_reference>
+{% else %}
+      <lid_reference>{{ reference.lid_reference }}</lid_reference>
+{% endif %}
+      <reference_type>{{ reference.reference_type }}</reference_type>
+    </Internal_Reference>
+{% endfor %}
+  </Reference_List>
+{% endif %}
+
+  <File_Area_Observational>
+    <File>
+      <file_name>{{ cdf_file_name }}</file_name>
+      <creation_date_time>{{ cdf_creation_time }}</creation_date_time>
+      <file_size unit="byte">{{ cdf_size }}</file_size>
+      <md5_checksum>{{ cdf_md5 }}</md5_checksum>
+    </File>
+
+    <!-- Confirm the CDF header length independently for each product. -->
+    <Header>
+      <name>CDF Header</name>
+      <offset unit="byte">0</offset>
+      <object_length unit="byte">{{ cdf_header_length }}</object_length>
+      <parsing_standard_id>{{ cdf_parsing_standard_id }}</parsing_standard_id>
+    </Header>
+
+{% for object in data_objects %}
+{% if object.kind == "Table_Binary" %}
+    <!--
+      This representation is valid only when the CDF character data occupy a
+      fixed-length contiguous region and match the selected PDS4 data type.
+    -->
+    <Table_Binary>
+      <name>{{ object.name }}</name>
+      <local_identifier>{{ object.name }}</local_identifier>
+      <offset unit="byte">{{ object.offset }}</offset>
+      <records>{{ object.records }}</records>
+      <description>{{ object.description }}</description>
+      <Record_Binary>
+        <fields>1</fields>
+        <groups>0</groups>
+        <record_length unit="byte">{{ object.record_length }}</record_length>
+        <Field_Binary>
+          <name>{{ object.name }}</name>
+          <field_location unit="byte">1</field_location>
+          <data_type>{{ object.pds_data_type }}</data_type>
+          <field_length unit="byte">{{ object.record_length }}</field_length>
+        </Field_Binary>
+      </Record_Binary>
+    </Table_Binary>
+{% else %}
+    <Array>
+      <name>{{ object.name }}</name>
+      <local_identifier>{{ object.name }}</local_identifier>
+      <offset unit="byte">{{ object.offset }}</offset>
+      <axes>{{ object.axes | length }}</axes>
+      <axis_index_order>Last Index Fastest</axis_index_order>
+      <description>{{ object.description }}</description>
+
+      <Element_Array>
+        <data_type>{{ object.pds_data_type }}</data_type>
+{% if object.unit %}
+        <unit>{{ object.unit }}</unit>
+{% endif %}
+      </Element_Array>
+
+{% for axis in object.axes %}
+      <Axis_Array>
+        <axis_name>{{ axis.name }}</axis_name>
+        <elements>{{ axis.elements }}</elements>
+        <sequence_number>{{ loop.index }}</sequence_number>
+      </Axis_Array>
+{% endfor %}
+
+{% if object.fillval or object.validmin or object.validmax %}
+      <!--
+        Values equal to FILLVAL are omitted from the valid range so an invalid
+        constant is not also declared as a valid minimum or maximum.
+      -->
+      <Special_Constants>
+{% if object.fillval %}
+        <invalid_constant>{{ object.fillval }}</invalid_constant>
+{% endif %}
+{% if object.validmax and object.validmax != object.fillval %}
+        <valid_maximum>{{ object.validmax }}</valid_maximum>
+{% endif %}
+{% if object.validmin and object.validmin != object.fillval %}
+        <valid_minimum>{{ object.validmin }}</valid_minimum>
+{% endif %}
+      </Special_Constants>
+{% endif %}
+    </Array>
+{% endif %}
+{% endfor %}
+  </File_Area_Observational>
+</Product_Observational>

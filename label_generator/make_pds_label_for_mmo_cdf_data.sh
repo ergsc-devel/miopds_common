@@ -21,7 +21,7 @@ CDF_FILE="${1:?Usage: $0 CDF_FILE TEMPLATE_DIR OUTPUT_DIR TEMPLATE_NAME [RENDERE
 TEMPLATE_DIR="${2:?ERROR: TEMPLATE_DIR is required.}"
 
 # Third argument: Jinja2 template file name.
-TEMPLATE_NAME="${3:?ERROR: TEMPLATE_NAME is required.}"
+TEMPLATE_NAME="${3:-mmo_cdf_label_template_psa_revised.xml.j2}"
 
 # Build the full path to the Jinja2 template file.
 TEMPLATE_FILE="$TEMPLATE_DIR/$TEMPLATE_NAME"
@@ -31,7 +31,7 @@ OUTPUT_DIR="${4:?ERROR: OUTPUT_DIR is required.}"
 
 # Python renderer that reads the CDF file and generates the PDS4 label.
 # Set the RENDERER environment variable to use another Python script.
-RENDERER="${RENDERER:-$SCRIPT_DIR/render_mmo_cdf_label.py}"
+RENDERER="${RENDERER:-$SCRIPT_DIR/render_mmo_cdf_label_multi_dataset.py}"
 
 # Directory containing the project-specific cdftool Python module.
 # Set the CDFTOOL_DIR environment variable to use another location.
@@ -86,19 +86,18 @@ echo "Output directory  : $OUTPUT_DIR"
 echo "Renderer          : $RENDERER"
 
 # Arguments beginning with the fifth argument are passed to the Python renderer.
-RENDER_OUTPUT="$(python3 "$RENDERER" \
+python3 "$RENDERER" \
   "$CDF_FILE" \
   "$TEMPLATE_FILE" \
   "$OUTPUT_DIR" \
-  "${@:5}")"
+  "${@:5}"
 
-printf '%s\n' "$RENDER_OUTPUT"
+CDF_BASE="$(basename "$CDF_FILE")"
+CDF_STEM="${CDF_BASE%.[cC][dD][fF]}"
+GENERATED_LABEL="$OUTPUT_DIR/$CDF_STEM.lblx"
 
-# The renderer prints the final label path in the form "Generated   : PATH".
-GENERATED_LABEL="$(printf '%s\n' "$RENDER_OUTPUT" | sed -n 's/^Generated[[:space:]]*:[[:space:]]*//p' | tail -n 1)"
-
-[[ -n "$GENERATED_LABEL" && -f "$GENERATED_LABEL" ]] || {
-  echo "ERROR: Generated PDS label path could not be confirmed." >&2
+[[ -f "$GENERATED_LABEL" ]] || {
+  echo "ERROR: Generated PDS label was not found: $GENERATED_LABEL" >&2
   exit 1
 }
 
