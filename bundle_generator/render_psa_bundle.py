@@ -98,7 +98,7 @@ def main() -> None:
         bundle_lid=args.bundle_lid,
         bundle_vid=args.bundle_vid,
         publication_year=args.publication_year,
-        author_list=args.author_list,
+        author_list=args.list_author,
         modification_date=args.modification_date,
         collections=collections,
     )
