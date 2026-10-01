@@ -32,7 +32,7 @@ MODIFICATION_DATE="${MODIFICATION_DATE:-$(date -u +%F)}"
 
 # Generate bundle_<Bundle directory name>.xml unless OUTPUT_FILE is specified.
 # Example: BUNDLE_DIR=bc_mmo_pwi -> bundle_bc_mmo_pwi.xml
-OUTPUT_FILE="${OUTPUT_FILE:-bundle_${BUNDLE_NAME}.xml}"
+OUTPUT_FILE="${OUTPUT_FILE:-${BUNDLE_NAME}.xml}"
 
 TEMPLATE_FILE="${TEMPLATE_FILE:-${SCRIPT_DIR}/bundle_template.xml.j2}"
 RENDERER_FILE="${RENDERER_FILE:-${SCRIPT_DIR}/render_psa_bundle.py}"
