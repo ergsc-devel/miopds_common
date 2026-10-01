@@ -60,7 +60,7 @@ python3 "$RENDERER_FILE" \
   "$COLLECTION_LID" \
   "$OUTPUT_BASE"
 
-COLLECTION_XML="$COLLECTION_DIR/${OUTPUT_BASE}.xml"
+COLLECTION_XML="$COLLECTION_DIR/${OUTPUT_BASE}.lblx"
 COLLECTION_CSV="$COLLECTION_DIR/${OUTPUT_BASE}.csv"
 [[ -f "$COLLECTION_XML" ]] || { echo "ERROR: generated Collection XML not found: $COLLECTION_XML" >&2; exit 1; }
 [[ -f "$COLLECTION_CSV" ]] || { echo "ERROR: generated Collection CSV not found: $COLLECTION_CSV" >&2; exit 1; }
