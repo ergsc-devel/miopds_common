@@ -24,7 +24,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--publication-year", default="2027")
     parser.add_argument("--list-author", default="")  # 旧CLIとの互換用。テンプレートには渡すが使用は任意。
     parser.add_argument("--modification-date", required=True)
-    parser.add_argument("--output", default="bundle.xml")
+    parser.add_argument("--output", default="bc_mmo_pwi.lblx")
     return parser.parse_args()
 
 
@@ -40,7 +40,7 @@ def load_collections(bundle_dir: Path) -> list[dict[str, str]]:
     collections: list[dict[str, str]] = []
     seen_lids: set[str] = set()
 
-    for label_path in sorted(bundle_dir.rglob("*.xml")):
+    for label_path in sorted(bundle_dir.rglob("*.lblx")):
         try:
             root = ET.parse(label_path).getroot()
         except ET.ParseError:
