@@ -18,7 +18,7 @@ TEMPLATE_FILE="${TEMPLATE_FILE:-$SCRIPT_DIR/collection_template.xml.j2}"
 RENDERER_FILE="${RENDERER_FILE:-$SCRIPT_DIR/render_psa_collection.py}"
 
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"
-VALIDATE_BIN="${VALIDATE_BIN:-$HOME/validate-4.0.8/bin/validate}"
+VALIDATE_BIN="${VALIDATE_BIN:-$HOME/validate-4.2.0/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"
 
 # This is the save location for check reports shared by all generators.
