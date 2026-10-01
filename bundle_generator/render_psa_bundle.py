@@ -22,7 +22,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--bundle-lid", required=True)
     parser.add_argument("--bundle-vid", default="1.0")
     parser.add_argument("--publication-year", default="2027")
-    parser.add_argument("--author-list", default="")  # 旧CLIとの互換用。テンプレートには渡すが使用は任意。
+    parser.add_argument("--list-author", default="")  # 旧CLIとの互換用。テンプレートには渡すが使用は任意。
     parser.add_argument("--modification-date", required=True)
     parser.add_argument("--output", default="bundle.xml")
     return parser.parse_args()
