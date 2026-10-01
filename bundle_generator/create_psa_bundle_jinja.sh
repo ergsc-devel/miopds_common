@@ -39,7 +39,7 @@ RENDERER_FILE="${RENDERER_FILE:-${SCRIPT_DIR}/render_psa_bundle.py}"
 
 # PDS Validate settings.
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"
-VALIDATE_BIN="${VALIDATE_BIN:-${HOME}/validate-4.0.8/bin/validate}"
+VALIDATE_BIN="${VALIDATE_BIN:-${HOME}/validate-4.2.0/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"
 BUNDLE_LABEL_EXTENSION="${BUNDLE_LABEL_EXTENSION:-}"
 
