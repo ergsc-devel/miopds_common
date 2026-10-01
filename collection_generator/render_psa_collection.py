@@ -98,7 +98,7 @@ def main() -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     inventory_path = output_dir / f"{output_base}.csv"
-    collection_path = output_dir / f"{output_base}.xml"
+    collection_path = output_dir / f"{output_base}.lblx"
     skip_path = output_dir / f"{output_base}_skipped_missing_cdf.txt"
 
     # PDS DSV inventory uses CRLF record delimiters.
