@@ -172,6 +172,9 @@ fi
 VALIDATE_ARGS=(
     --rule pds4.bundle
     --target "${BUNDLE_DIR}"
+    --catalog "${VALIDATE_CATALOG}"
+    --label-extension lblx
+    --report-file "${VALIDATE_REPORT}"
 )
 
 if [[ -n "${BUNDLE_LABEL_EXTENSION}" ]]; then
