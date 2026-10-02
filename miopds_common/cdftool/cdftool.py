@@ -40,7 +40,7 @@ class cdfinfo:
     to extract some information from a data file in CDF for populating a PDS label.
 
     Usage:
-        import cdftool
+        from miopds_common import cdftool
         info = cdftool.cdfinfo("bc_mmo_spm_l2p_cnt_20210810_r00-v00-00.cdf")
         info.var_info
 
