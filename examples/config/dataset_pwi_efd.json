@@ -1,0 +1,22 @@
+{
+  "instrument_file": "instrument_pwi.json",
+  "authors_file": "authors_pwi_efd.json",
+  "purpose": "Science",
+  "processing_level": "Calibrated",
+  "science_facets": {
+    "domains": ["Heliosphere", "Magnetosphere"],
+    "discipline_name": "Fields",
+    "facet1": "Electric",
+    "facet2": "Waves"
+  },
+  "cdf": {
+    "time_variable": "strtime",
+    "epoch_variable": "epoch"
+  },
+  "collection": {
+    "collection_type": "Data",
+    "title": "REPLACE_COLLECTION_TITLE",
+    "citation_description": "REPLACE_CITATION_DESCRIPTION",
+    "collection_description": "REPLACE_COLLECTION_DESCRIPTION"
+  }
+}

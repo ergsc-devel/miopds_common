@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "miopds_common"
+dynamic = ["version"]
+description = "Python package for pds pipeline common in Mio instruments"
+readme = "README.md"
+
+# Python 3.10 reaches end of life in October 2026. No upper bound on purpose.
+# Python 3.10 は 2026年10月でサポート終了。上限はあえて設けない。
+requires-python = ">=3.11"
+authors = [
+    { name = "T. Hori" },
+    { name = "A. Shinbori" },
+    { name = "S. Chiba" },
+]
+
+keywords = [
+    "pds archiving",
+    "PDS4",
+    "BepiColombo",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    # List only the versions that have been tested.
+    # 実際にテストしたバージョンだけを書く（3.13、3.14 はテスト後に追加）。
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "cdflib>=1.0",
+    "Jinja2>=3.1,<4",
+    "numpy>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Repository = "https://github.com/ergsc-devel/miopds_common"
+
+# Commands created by pip install / pip install で作成されるコマンド
+[project.scripts]
+miopds-label = "miopds_common._cli:label_main"
+miopds-collection = "miopds_common._cli:collection_main"
+miopds-bundle = "miopds_common._cli:bundle_main"
+miopds-document = "miopds_common._cli:document_main"
+miopds-document-set = "miopds_common._cli:document_set_main"
+miopds-validate = "miopds_common._cli:validate_main"
+
+[tool.setuptools.dynamic]
+version = { attr = "miopds_common.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["miopds_common*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

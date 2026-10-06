@@ -1,0 +1,15 @@
+{
+  "instrument": {
+    "name": "PWI",
+    "lid": "urn:jaxa:darts:context:instrument:mmo.pwi"
+  },
+  "bundle": {
+    "title": "BepiColombo Mio Plasma Wave Investigation Bundle",
+    "description": "This bundle contains BepiColombo Mio Plasma Wave Investigation data, documentation, and related collection products."
+  },
+  "document_collection": {
+    "title": "BepiColombo MMO PWI document collection",
+    "citation_description": "This collection contains documentation supporting the BepiColombo Mercury Magnetospheric Orbiter Plasma Wave Investigation archive, including the PWI Data User Guide.",
+    "collection_description": "Documentation required to understand and use the BepiColombo MMO PWI data products."
+  }
+}

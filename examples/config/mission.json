@@ -1,0 +1,22 @@
+{
+  "information_model_version": "1.22.0.0",
+  "investigation": {
+    "name": "BepiColombo",
+    "type": "Mission",
+    "lid": "urn:esa:psa:context:investigation:mission.bc"
+  },
+  "instrument_host": {
+    "name": "Mercury Magnetospheric Orbiter",
+    "lid": "urn:jaxa:darts:context:instrument_host:spacecraft.mmo"
+  },
+  "cdf_parsing_standard_id": "CDF 3.4 ISTP/IACG",
+  "default_mission_phase": {
+    "name": "Mercury Science Phase",
+    "id": "msp"
+  },
+  "default_target": {
+    "name": "Mercury",
+    "type": "Planet",
+    "lid": "urn:nasa:pds:context:target:planet.mercury"
+  }
+}
