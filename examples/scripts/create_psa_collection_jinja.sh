@@ -37,7 +37,7 @@ VALIDATE_REPORT="${VALIDATE_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BAS
 # CDF がなく除外したラベルの一覧。アーカイブの外に保存する
 SKIP_REPORT="${SKIP_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_skipped_missing_cdf.txt}"
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"   # 0: skip validation / 0 なら検証しない
-VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate-4.2.0/bin/validate}"
+VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
 
 # Python that has miopds_common installed. It differs between servers
