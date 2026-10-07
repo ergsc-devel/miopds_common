@@ -42,7 +42,7 @@ VALIDATE_REPORT="${VALIDATE_REPORT:-${REPORT_DIR}/${REPORT_TIMESTAMP}_${BUNDLE_N
 # What Validate printed on the screen / Validate が画面に出した内容の記録
 VALIDATE_LOG="${VALIDATE_LOG:-${REPORT_DIR}/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt}"
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"   # 0: skip validation / 0 なら検証しない
-VALIDATE_BIN="${VALIDATE_BIN:-${HOME}/local/pds/validate-4.2.0/bin/validate}"
+VALIDATE_BIN="${VALIDATE_BIN:-${HOME}/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
 # Label file extension for Validate ("": Validate's default, xml)
 # Validate に渡すラベルの拡張子（空なら Validate の既定の xml）
