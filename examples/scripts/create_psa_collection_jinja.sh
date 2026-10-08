@@ -84,4 +84,5 @@ fi
 "$PYTHON" -m miopds_common validate "$COLLECTION_DIR/${OUTPUT_BASE}.lblx" \
   --report "$VALIDATE_REPORT" \
   --validate-bin "$VALIDATE_BIN" \
-  --catalog "$VALIDATE_CATALOG"
+  --catalog "$VALIDATE_CATALOG" \
+  --label-extension "lblx"
