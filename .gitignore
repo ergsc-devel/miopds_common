@@ -211,6 +211,10 @@ __marimo__/
 CLAUDE.md
 .claude/
 
+# Mission phase timeline: not public, so far
+mission_timeline.json
+mission_*.tab
+
 # Original python scripts
 miopds_common/*/render_*.py
 

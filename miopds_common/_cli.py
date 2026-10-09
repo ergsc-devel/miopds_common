@@ -351,6 +351,40 @@ def document_set_main(
     return 0
 
 
+def timeline_main(
+    argv: list[str] | None = None, prog: str = "miopds-timeline"
+) -> int:
+    """Entry point of miopds-timeline (mission phase table -> mission_timeline.json).
+    miopds-timeline（ミッションフェーズの表 → mission_timeline.json）の入口。
+    """
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description="Convert the mission phase table (*.tab) into "
+        "mission_timeline.json. The dates are not public: keep both files "
+        "only on the server.",
+    )
+    parser.add_argument("table", type=Path, help="mission phase table (*.tab)")
+    parser.add_argument("output", type=Path, help="mission_timeline.json to write")
+    parser.add_argument(
+        "--end",
+        help="stop of the last phase. Without it, the last phase must be msp "
+        "and its stop is 2100-01-01T00:00:00Z",
+    )
+    args = parser.parse_args(argv)
+    try:
+        from miopds_common.tab2timeline import TimelineConverter
+
+        result = TimelineConverter(end=args.end).write(args.table, args.output)
+    except Exception as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    if result.changed:
+        print(f"Generated timeline: {result.path}")
+    else:
+        print(f"Timeline is up to date (not rewritten): {result.path}")
+    return 0
+
+
 def validate_main(
     argv: list[str] | None = None, prog: str = "miopds-validate"
 ) -> int:

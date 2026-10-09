@@ -36,6 +36,10 @@ SUBCOMMANDS = {
     "collections2bundle": (
         _cli.bundle_main, "Collection labels -> Bundle label", "miopds-bundle"
     ),
+    "tab2timeline": (
+        _cli.timeline_main, "mission phase table (*.tab) -> mission_timeline.json",
+        "miopds-timeline",
+    ),
     "validate": (
         _cli.validate_main, "run NASA PDS Validate and save the report",
         "miopds-validate",

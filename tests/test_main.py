@@ -32,7 +32,7 @@ def test_help_lists_every_subcommand():
     status, text = _run(["--help"])
     assert status == 0
     for name in ("cdf2pdslabel", "labels2collection", "pdf2pdslabel",
-                 "pdf2document", "collections2bundle", "validate"):
+                 "pdf2document", "collections2bundle", "tab2timeline", "validate"):
         assert name in text
 
 

@@ -58,6 +58,7 @@ miopds-collection = "miopds_common._cli:collection_main"
 miopds-bundle = "miopds_common._cli:bundle_main"
 miopds-document = "miopds_common._cli:document_main"
 miopds-document-set = "miopds_common._cli:document_set_main"
+miopds-timeline = "miopds_common._cli:timeline_main"
 miopds-validate = "miopds_common._cli:validate_main"
 
 [tool.setuptools.dynamic]
