@@ -229,9 +229,21 @@ class MissionTimeline:
 
     @classmethod
     def load(cls, path: Path | str) -> "MissionTimeline":
-        timeline = _load_object(cls, path)
+        path = _resolve(path)
+        return cls.from_data(_read_json(path), str(path))
+
+    @classmethod
+    def from_data(cls, data: Any, where: str = "timeline") -> "MissionTimeline":
+        """Create a timeline from data already read as JSON, and check its periods.
+        JSON として読み込み済みのデータから期間表を作り、期間を確認する。
+
+        `where` names the source in error messages / where はエラーで示す出どころ。
+        """
+        # No path fields in a timeline, so the base directory is not used
+        # 期間表にはパスの項目がないので、基準のディレクトリは使われない
+        timeline = _build(cls, data, where, Path("."))
         for name in ("mission_phases", "targets"):
-            _check_periods(getattr(timeline, name), f"{path}.{name}")
+            _check_periods(getattr(timeline, name), f"{where}.{name}")
         return timeline
 
     def phase_at(self, when: datetime) -> MissionPhase | None:
