@@ -47,5 +47,5 @@ PYTHON="${PYTHON:-python3}"
   "$OUTPUT_DIR" \
   --mission-config "$MISSION_CONFIG" \
   --dataset-config "$DATASET_CONFIG" \
-  --timeline \
+  --timeline "$TIMELINE" \
   "${@:5}"
