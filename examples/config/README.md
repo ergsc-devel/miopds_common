@@ -286,7 +286,7 @@ timeline がない間は、既定値（Mercury Science Phase / `msp`）以外の
 
 ### .tab から変換する（tab2timeline）
 
-ミッションフェーズの表（`.tab`。日付は非公開）から、`mission_timeline.json` を作ります。
+ミッションフェーズの表（`.tab`。日付は非公開）から、`mission_timeline.json` を作ります。miopds_common リポジトリの親ディレクトリに移動し、以下を実行します。
 
 ```bash
 python -m miopds_common tab2timeline <ミッションフェーズの表>.tab ~/pds_config/mission_timeline.json
