@@ -158,10 +158,17 @@ class CDFLabelGenerator:
 
         time_variable = self.dataset.cdf.time_variable
         start_time, stop_time = _time_bounds(cdf, time_variable)
-        time_count = _validate_time_record_counts(
+        # Validate only the configured primary epoch/text-time pair. Other
+        # record-varying variables may use independent epoch variables.
+        _validate_time_record_counts(
             cdf, names, self.dataset.cdf.epoch_variable, time_variable
         )
-        objects = _data_objects(cdf, names, physical, time_count)
+        objects = _data_objects(
+            cdf,
+            names,
+            physical,
+            self.dataset.cdf.epoch_variable,
+        )
 
         date = _yyyymmdd_from_name(cdf_path.name)
         stat = cdf_path.stat()
@@ -342,9 +349,22 @@ def _validate_time_record_counts(cdf, names, epoch_name: str, time_name: str) ->
     return epoch_count
 
 
-def _data_objects(cdf, names, physical, time_count: int) -> list[dict[str, Any]]:
+def _data_objects(
+    cdf,
+    names,
+    physical,
+    primary_epoch_name: str,
+) -> list[dict[str, Any]]:
     """Build one PDS4 object description for each CDF zVariable.
+
+    Record-varying variables are not required to have the same record count as
+    the primary epoch. If DEPEND_0 names another CDF variable, the variable is
+    validated against that dependency instead. This supports CDF products with
+    multiple independent epoch axes.
+
     CDF の zVariable ごとに、PDS4 のデータオブジェクトの記述を作る。
+    レコード可変変数を primary epoch と同じ件数に固定せず、DEPEND_0 が
+    指す時刻変数ごとに件数を検査することで multi-epoch に対応する。
     """
     objects = []
     for name in names:
@@ -373,12 +393,53 @@ def _data_objects(cdf, names, physical, time_count: int) -> list[dict[str, Any]]
 
         axes = []
         if record_varying:
-            if records != time_count:
-                raise ValueError(
-                    f"Record-varying variable has an inconsistent count: "
-                    f"{name}={records}, expected={time_count}"
+            # A multi-epoch CDF may contain record-varying variables with
+            # different record counts. DEPEND_0 identifies the record axis for
+            # each variable and is therefore the appropriate comparison target.
+            dependency_0 = _attr(attributes, "DEPEND_0")
+
+            if dependency_0 and dependency_0 != name:
+                if dependency_0 not in names:
+                    raise ValueError(
+                        f"DEPEND_0 variable was not found: "
+                        f"{name} -> {dependency_0}"
+                    )
+
+                dependency_inquiry = cdf.varinq(dependency_0)
+                dependency_record_varying = bool(
+                    _field(
+                        dependency_inquiry,
+                        "Rec_Vary",
+                        default=True,
+                    )
                 )
-            axes.append({"name": "time", "elements": time_count})
+                dependency_records = _variable_record_count(
+                    cdf,
+                    dependency_0,
+                    dependency_record_varying,
+                )
+
+                if records != dependency_records:
+                    raise ValueError(
+                        f"Record count does not match DEPEND_0: "
+                        f"{name}={records}, "
+                        f"{dependency_0}={dependency_records}"
+                    )
+
+            if dependency_0:
+                record_axis_name = dependency_0
+            elif name == primary_epoch_name:
+                record_axis_name = "time"
+            else:
+                # Variables without DEPEND_0 retain their own record count.
+                # 'record' is used rather than incorrectly assigning the
+                # primary epoch axis.
+                record_axis_name = "record"
+
+            axes.append({
+                "name": record_axis_name,
+                "elements": records,
+            })
         for index, size in enumerate(dimensions, start=1):
             size = int(size)
             if size > 1:
