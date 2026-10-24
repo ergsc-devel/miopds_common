@@ -1,316 +1,454 @@
-# examples
+# Sample shell scripts and templates (examples)
 
-miopds_common を使って PSA/PDS4 アーカイブを作るための**見本**です。
-各機器のリポジトリ（例：mio_pwiam2p）に `examples/` をコピーし、機器に合わせて調整して使います。
+[日本語](README_ja.md)
 
-> 現在の見本は BepiColombo Mio PWI 向けの値（`bc_mmo_pwi` など）を既定値として含んでいます。
-> コピーした後、機器に合わせて書き換えてください。
+`examples/` is a set of samples for making the PSA/PDS4 archive with
+miopds_common. It holds shell scripts, Jinja2 templates and config files
+(JSON). Copy it into each instrument repository (e.g. `instrument_repo`) under
+the name `pds/`, and adapt it to the instrument.
 
-## ディレクトリ構成
+This document is a reference for the arguments, environment variables and
+outputs of each script. For the steps to run everything from the beginning,
+see "Quick start" in [../README.md](../README.md). This document also assumes
+the directory layout of the quick start (the bundle is outside the repository,
+at `~/pds4/bc_mmo_pwi/`). The command examples are run at the top of the
+instrument repository.
+
+The samples have values for BepiColombo Mio PWI (such as `bc_mmo_pwi`) as
+their defaults. For other instruments, replace them with the values of the
+instrument after copying.
+
+## Contents
 
 ```text
 examples/
-├── scripts/     # shell スクリプト（python -m miopds_common の呼び出しと PDS Validate の実行）
-├── templates/   # Jinja2 テンプレート（*.xml.j2）
-└── config/      # 設定ファイル（authors_*.json）
+├── scripts/     # shell scripts
+├── templates/   # Jinja2 templates (*.xml.j2)
+└── config/      # config files (*.json)
 ```
 
-| ファイル | 用途 |
+| File | Purpose |
 |---|---|
-| `scripts/make_pds_label_for_mmo_cdf_data.sh` | CDF ファイルから観測ラベル（`.lblx`）を生成 |
-| `scripts/create_psa_collection_jinja.sh` | Collection ラベルとインベントリ CSV を生成して検証 |
-| `scripts/create_psa_document_jinja.sh` | Product_Document と Document Collection を生成して検証 |
-| `scripts/create_psa_bundle_jinja.sh` | Bundle ラベルを生成して Bundle 全体を検証 |
-| `scripts/cron_mk_cdf_to_pds.sh` | 上の4本を呼び、古くなった製品だけを作り直す（親 shell。cron での定期実行を想定） |
-| `templates/mmo_cdf_label_template_multi_dataset.xml.j2` | 観測ラベル用テンプレート |
-| `templates/collection_template.xml.j2` | Collection ラベル用テンプレート |
-| `templates/document_template.xml.j2` | Product_Document 用テンプレート |
-| `templates/document_collection_template.xml.j2` | Document Collection 用テンプレート |
-| `templates/bundle_template.xml.j2` | Bundle ラベル用テンプレート |
-| `config/authors_instrument_example.json` | 著者リストのひな形 |
-| `config/authors_pwi_efd.json` | 著者リストの記入例（PWI-EFD） |
+| `scripts/make_pds_label_for_mmo_cdf_data.sh` | Makes one observational label (`.lblx`) from one CDF file |
+| `scripts/create_psa_collection_jinja.sh` | Makes the label and inventory of a data Collection, and validates them |
+| `scripts/create_psa_document_jinja.sh` | Makes the Document label and the Document Collection, and validates them |
+| `scripts/create_psa_bundle_jinja.sh` | Makes the Bundle label, and validates the whole Bundle |
+| `scripts/cron_mk_cdf_to_pds.sh` | Calls the four scripts above in order, and rebuilds only the products whose inputs have changed (meant to be run regularly by cron) |
+| `templates/mmo_cdf_label_template_multi_dataset.xml.j2` | Template of the observational label |
+| `templates/collection_template.xml.j2` | Template of the data Collection label |
+| `templates/document_template.xml.j2` | Template of the Document label |
+| `templates/document_collection_template.xml.j2` | Template of the Document Collection label |
+| `templates/bundle_template.xml.j2` | Template of the Bundle label |
+| `config/mission.json` | Mission settings (shared by all Mio instruments) |
+| `config/instrument_pwi.json` | Instrument settings (filled in for PWI) |
+| `config/dataset_pwi_efd.json` | Dataset settings (filled in for PWI-EFD; replace the `REPLACE_` values before use) |
+| `config/authors_pwi_efd.json` | Author list (filled in for PWI-EFD) |
+| `config/authors_instrument_example.json` | Blank author list to start from |
+| `config/README.md`, `config/README_ja.md` | The items of the config files, and where each value goes in the labels (English, Japanese) |
 
-## 準備
+For how to write the config files, see [config/README.md](config/README.md).
 
-### 1. miopds_common のインストール
+## Preparation
 
-shell スクリプトは、`python -m miopds_common <サブコマンド>` の形で miopds_common（Python）を呼び出します。
-まず、miopds_common 専用の venv（例：`~/mio_pds_validate`）を作り、そこにインストールします。
-venv を作る `python3` は 3.11 以上である必要があります（`python3 --version` で確認）。
+### Installing miopds_common
+
+The shell scripts call miopds_common as `python -m miopds_common SUBCOMMAND`.
+Install miopds_common into its own venv (e.g. `~/mio_pds_validate`). For how
+to create the venv and install the package, see "Installation" in
+[../README.md](../README.md).
+
+### Choosing the Python on each server
+
+The name of the Python command (`python3` or `python`) and the location of the
+venv differ between servers. So the scripts use the Python given in the
+environment variable `PYTHON` (`python3` if it is not set). On each server,
+give the Python that has miopds_common installed in one of these ways.
+
+| How you run the scripts | How to give the Python |
+|---|---|
+| By hand | Activate the venv (`source ~/mio_pds_validate/bin/activate`), or run `export PYTHON=~/mio_pds_validate/bin/python` |
+| Only once | Write it before the command, as in `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi` |
+| By cron | Write `PYTHON=$HOME/mio_pds_validate/bin/python` in the crontab line. This is always needed: cron does not activate the venv, and its PATH is minimal |
+| Fixed in the instrument repository | In the copied scripts, replace `python3` in `PYTHON="${PYTHON:-python3}"` with the absolute path of the Python on that server |
+
+An example of a crontab line (the paths are examples; change them for the
+server):
 
 ```bash
-python3 -m venv ~/mio_pds_validate        # 専用の venv を作る（最初の1回だけ）
-source ~/mio_pds_validate/bin/activate    # venv を有効化
-pip install /path/to/miopds_common        # 開発中は pip install -e で編集を即時反映
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds4/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
-#### サーバーごとに使う Python を指定する
-
-Python のコマンド名（`python3` か `python` か）や venv の場所は、サーバーごとに違います。
-スクリプトは推測せず、**環境変数 `PYTHON` に指定された Python** を使います（未指定なら `python3`）。
-各サーバーで、miopds_common をインストールした Python を、次のどれかの方法で指定してください。
-
-| 実行のしかた | 指定の方法 |
-|---|---|
-| 手で実行する | venv を有効にする（`source ~/mio_pds_validate/bin/activate`）。または `export PYTHON=~/mio_pds_validate/bin/python` |
-| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./examples/scripts/cron_mk_cdf_to_pds.sh` |
-| cron で実行する | crontab の行で `PYTHON=$HOME/mio_pds_validate/bin/python` を指定する（**必須**。cron は venv を有効にせず、PATH も最小限） |
-| 各機器の repo で固定する | コピーした shell の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
-
-crontab の例（パスはサーバーに合わせて書き換える）：
-
-```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python <repo>/examples/scripts/cron_mk_cdf_to_pds.sh <bundle_dir> >> <log_file> 2>&1
-```
-
-指定した Python に miopds_common が入っているかは、次のコマンドで確認できます。
+To check that the Python you gave has miopds_common installed, run:
 
 ```bash
 "$PYTHON" -c 'import miopds_common; print(miopds_common.__file__)'
 ```
 
-入っていない Python を指定すると、スクリプトは
-`ERROR: miopds_common is not installed for <指定した Python>` で停止します。
+If it does not, the scripts stop with
+`ERROR: miopds_common is not installed for python3` (`python3` is replaced by
+the Python you gave).
 
-#### サブコマンドとコマンドの対応
+### Installing PDS Validate 4.2.0
 
-| サブコマンド（shell で使う形） | 同じ処理のコマンド | 処理 | Python の関数 |
-|---|---|---|---|
-| `python -m miopds_common cdf2pdslabel` | `miopds-label` | CDF → 観測ラベル | `_cli.label_main` |
-| `python -m miopds_common labels2collection` | `miopds-collection` | ラベル群 → Collection | `_cli.collection_main` |
-| `python -m miopds_common pdf2pdslabel` | `miopds-document` | PDF → Document のラベル | `_cli.document_main` |
-| `python -m miopds_common pdf2document` | `miopds-document-set` | PDF → Document のラベル＋Document Collection | `_cli.document_set_main` |
-| `python -m miopds_common collections2bundle` | `miopds-bundle` | Collection 群 → Bundle | `_cli.bundle_main` |
-| `python -m miopds_common validate` | `miopds-validate` | PDS Validate の実行 | `_cli.validate_main` |
+PDS Validate is a Java validation tool distributed by NASA PDS. The packages
+are on [GitHub Releases](https://github.com/NASA-PDS/validate/releases), and
+its usage is in the [official documentation](https://nasa-pds.github.io/validate/).
+The steps below assume that the package `validate-4.2.0-bin.tar.gz` has been
+downloaded to `~/Downloads/`.
 
-一覧は `python -m miopds_common --help`、各サブコマンドのオプションは
-`python -m miopds_common <サブコマンド> --help` で確認できます。
-
-### 2. PDS Validate 4.2.0 のインストール
-
-PDS Validate は NASA PDS が提供する Java 製の検証ツールです。
-
-- Releases: https://github.com/NASA-PDS/validate/releases
-- 公式ドキュメント: https://nasa-pds.github.io/validate/
-
-1. Java を確認します。
+1. Check that Java is installed.
 
    ```bash
    java -version
    ```
 
-2. Validate 4.2.0 の配布物（tar.gz または ZIP）を `$HOME/local/pds` へ展開します。
+2. Create the directory to extract into (`mkdir -p` does nothing if the
+   directory already exists).
 
    ```bash
-   mkdir -p "$HOME/local/pds"   # 展開先を作る（すでにあれば何もしない）
-   cd "$HOME/local/pds"
-   tar -xzf /path/to/validate-4.2.0.tar.gz
-   # ZIP の場合
-   unzip /path/to/validate-4.2.0.zip
+   mkdir -p ~/local/pds
    ```
 
-3. 実行権限と起動を確認します。
+3. Extract the package (`-C` gives the directory to extract into). This
+   creates `~/local/pds/validate-4.2.0/`.
 
    ```bash
-   chmod +x "$HOME/local/pds/validate-4.2.0/bin/validate"
-   "$HOME/local/pds/validate-4.2.0/bin/validate" --help
+   tar -xzf ~/Downloads/validate-4.2.0-bin.tar.gz -C ~/local/pds
    ```
 
-展開先が異なる場合は、実際のパスを環境変数 `VALIDATE_BIN` に指定してください。
-Java の要件は、Validate 4.2.0 配布物のリリースノートを優先してください。
+   To use the ZIP package (`validate-4.2.0-bin.zip`) instead, extract it with
+   this command:
 
-### 3. XML Catalog
+   ```bash
+   unzip ~/Downloads/validate-4.2.0-bin.zip -d ~/local/pds
+   ```
 
-PSA/BepiColombo の辞書を解決する `pds4-validate-catalog.xml` を用意し、
-環境変数 `VALIDATE_CATALOG` に**絶対パス**で指定することを推奨します。
-見つからない場合、スクリプトは警告を出して `--catalog` なしで検証を続けます。
+4. Check that it starts.
 
-## 実行の順番
+   ```bash
+   ~/local/pds/validate-4.2.0/bin/validate --help
+   ```
 
-Bundle は Collection ラベルを集めて作るため、次の順番で実行します。
+If you extracted it somewhere else, give that location in the environment
+variable `VALIDATE_BIN`. For the Java version needed, see the release notes of
+the package.
 
-1. 観測ラベル（label）
-2. Collection（collection）
-3. Document（document）
-4. Bundle（bundle）
+### XML Catalog
 
-この順番で4本をまとめて実行するのが `cron_mk_cdf_to_pds.sh` です。
+Prepare the XML Catalog (`pds4-validate-catalog.xml`) that resolves the PSA
+and BepiColombo dictionaries, and give its absolute path in the environment
+variable `VALIDATE_CATALOG`; this is recommended. If the file is not found,
+the scripts print a warning and continue the validation without the catalog.
 
-### まとめて実行・差分更新：`cron_mk_cdf_to_pds.sh`
+### Settings the current scripts need
 
-```bash
-./examples/scripts/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
-```
+With the layout of the quick start, the current scripts do not work unless you
+set the following environment variables. This is a bug, to be fixed in
+[Issue #7](https://github.com/ergsc-devel/miopds_common/issues/7).
 
-対象のファイルを巡回し、**古くなったものだけ**を作り直します（make と同じ考え方）。
-定期的に実行（cron など）しておけば、CDF や設定の更新がラベル、Collection、Bundle に反映されます。
+| Environment variable | Value (example) | Used by | Without it |
+|---|---|---|---|
+| `TIMELINE` | `~/pds_config/mission_timeline.json` | Observational labels | Stops with `TIMELINE: unbound variable` |
+| `MISSION_TIMELINE_FILE` | `~/pds_config/mission_timeline.json` | Collection | Stops, because `config/mission_timeline.json` does not exist |
+| `ARCHIVE_ROOT` | `~/pds4` | Collection | Its default is a server-specific path, so the Collection directory is not found and the script stops |
+| `VALIDATE_BIN` | `~/local/pds/validate-4.2.0/bin/validate` | Collection, Bundle | Its default is `~/local/pds/validate/bin/validate`, so the script stops at the validation |
 
-- 既定値：`BUNDLE_DIR=bc_mmo_pwi`。`all` を付けると、すべて作り直します。
-- 想定するディレクトリ構成（`science/` の下は年ごとのサブディレクトリでもよい）：
+For how to make the timeline (`mission_timeline.json`), see "Make the timeline"
+in [../README.md](../README.md).
 
-  ```text
-  BUNDLE_DIR/<collection>/science/**/*.cdf   データ（ラベルは CDF の隣に作る）
-  BUNDLE_DIR/document/*.pdf                  文書（なければ手順3を飛ばす）
-  ```
+## Rules common to the scripts
 
-- 作り直す条件：出力がない、または次のどれかが出力より新しいとき。
+- The scripts look for the templates and config files by paths relative to the
+  script (`../templates/`, `../config/`).
+- They save the validation reports by a path relative to where you run them
+  (`./pds_chk_log/` by default).
+- Except for the observational label script, they validate the labels they
+  make with `python -m miopds_common validate`.
+- They stop at the first failure. However, it is not yet confirmed that PDS
+  Validate exits with a non-zero status on validation errors. After the
+  validation, read the reports (see "Known issues" in
+  [../docs/usage.md](../docs/usage.md)).
 
-  | 出力 | 入力 |
-  |---|---|
-  | 観測ラベル（CDF ごと） | その CDF、dataset の設定ファイル |
-  | Collection | `science/` 以下のファイルとフォルダ（追加・削除も含む） |
-  | Document と Document Collection | PDF（`PDF_FILE`） |
-  | Bundle | 各 Collection のラベル |
-  | （すべて共通） | `templates/`、`config/`、`scripts/`、miopds_common の Python コード |
+All the scripts use these environment variables:
 
-  テンプレートや設定ファイル、shell を編集すると、すべての製品が作り直されます。
-- CDF ごとに追加のオプション（ミッションフェーズ、internal reference など）を渡すときは、
-  `cron_mk_cdf_to_pds.sh` の `set_label_args` 関数を編集します。
-- データの Collection は、`cron_mk_cdf_to_pds.sh` の中に「名前と dataset の設定ファイル」の組で1行ずつ書きます。
-  Collection を増やすときは、`make_data_collection ...` の行を追加してください。
-- CDF がなくなったラベルは**削除せず**、警告だけを表示します（Collection からは除外されます）。
-- 同じ Bundle に対しては同時に1つしか実行できません（ロック：`$TMPDIR/miopds_cron_mk_cdf_to_pds_<Bundle名>.lock`）。
-  cron と手動の実行で `TMPDIR` が異なる場合は、`LOCK_DIR` で固定の場所を指定してください。
-  異常終了などでロックが残った場合は、他に実行中でないことを確かめてから `rmdir` で削除してください。
-- 今回の実行のレポートは、すべて同じ `REPORT_DIR` に、同じ日時（`REPORT_TIMESTAMP`）を付けて保存します。
-- どこかの手順が失敗すると、その時点で止まります（後の手順は実行しません）。
-- L2 CDF の作成と、`science/` へのコピーは、各機器のパイプラインで `cron_mk_cdf_to_pds.sh` より前に行います。
-
-> **注意**：観測ラベルは CDF 1つごとに Python を起動するので、作り直す CDF が多いと時間がかかります。
-
-## 各スクリプト
-
-### 観測ラベル：`make_pds_label_for_mmo_cdf_data.sh`
-
-```bash
-./examples/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [cdf2pdslabel のオプション...]
-```
-
-- 設定ファイルは環境変数 `MISSION_CONFIG`（既定：`config/mission.json`）と
-  `DATASET_CONFIG`（既定：`config/dataset_pwi_efd.json`）で指定します。
-  機器・著者の情報は、`dataset_*.json` から参照されるファイルから読み込まれます。
-- 第5引数以降は `python -m miopds_common cdf2pdslabel` にそのまま渡され、上の既定値より優先されます。
-- `TEMPLATE_NAME` に `""` を渡すと、`mmo_cdf_label_template_multi_dataset.xml.j2` を使います。
-- 出力：`OUTPUT_DIR/<CDF ファイル名>.lblx`
-- このスクリプトは PDS Validate を実行しません。
-
-例：
-
-```bash
-./examples/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  bc_mmo_pwi-efd_l2_l-spec_20181109_r01-v00-00.cdf \
-  examples/templates mmo_cdf_label_template_multi_dataset.xml.j2 out/ \
-  --mission-phase-name Cruise --mission-phase-id cruise
-```
-
-ミッションフェーズは、既定では `mission.json` の値（Mercury Science Phase / `msp`）になります。
-他のフェーズのデータでは、`--mission-phase-name` と `--mission-phase-id` を組で指定するか、
-`--timeline` で期間表を指定してください（詳しくは `config/README.md`）。
-
-見本の `dataset_pwi_efd.json` は Collection の文が `REPLACE_...` のままなので、
-書き換えるまでは観測ラベルの生成もエラーになります（`config/README.md` を参照）。
-
-オプションの一覧は `python -m miopds_common cdf2pdslabel --help` で確認できます。
-
-### Collection：`create_psa_collection_jinja.sh`
-
-```bash
-./examples/scripts/create_psa_collection_jinja.sh [COLLECTION_NAME] [COLLECTION_DIR]
-```
-
-- 既定値：`COLLECTION_NAME=data_calibrated_efd`、`COLLECTION_DIR=bc_mmo_pwi/<COLLECTION_NAME>`
-- 生成の後、Collection ラベルを `python -m miopds_common validate` で検証し、レポートを `VALIDATE_REPORT` に保存します。
-- `LABEL_DIR`（既定：`<COLLECTION_DIR>/science`）以下の `.lblx` を探し、参照している CDF が揃っているラベルだけをインベントリに入れます。
-- 出力：`<COLLECTION_DIR>/<OUTPUT_BASE>.lblx`（ラベル）、`.csv`（インベントリ）
-- CDF が見つからず除外したラベルは、警告として表示し、一覧を `SKIP_REPORT`
-  （既定：`<REPORT_DIR>/<日時>_<OUTPUT_BASE>_skipped_missing_cdf.txt`）に保存します。
-  アーカイブの中にラベルのないファイルを置かないよう、Collection のディレクトリには作りません。
-
-- Collection の title、description、collection_type は `DATASET_CONFIG`（`dataset_*.json` の `collection`）から、
-  Information Model のバージョンは `MISSION_CONFIG`（`mission.json`）から読み込みます。
-  見本の `dataset_pwi_efd.json` の `REPLACE_...` は、使う前に必ず書き換えてください（残っているとエラーになります）。
-
-主な環境変数：`BUNDLE_NAME`、`LABEL_DIR`、`COLLECTION_LID`、`OUTPUT_BASE`、`TEMPLATE_FILE`、
-`MISSION_CONFIG`（既定：`config/mission.json`）、`DATASET_CONFIG`（既定：`config/dataset_pwi_efd.json`）、
-`PUBLICATION_YEAR`（既定：`2027`）、`VERSION_ID`（既定：`1.0`）、`SKIP_REPORT`
-
-### Document：`create_psa_document_jinja.sh`
-
-```bash
-./examples/scripts/create_psa_document_jinja.sh [DOCUMENT_DIR]
-```
-
-- 既定値：`DOCUMENT_DIR=bc_mmo_pwi/document`
-- `DOCUMENT_DIR` に PDF（既定：`bc_mmo_pwi_data_user_guide.pdf`）が必要です。
-- 出力：Product_Document のラベル（`.lblx`）、Document Collection のラベル（`.lblx`）、インベントリ CSV
-- Product_Document と Collection ラベルを個別に検証し、レポートを `DOCUMENT_REPORT` と `COLLECTION_REPORT` に保存します。
-- Document Collection の title と description、機器名は `INSTRUMENT_CONFIG`（`instrument_*.json`）から、
-  ミッション名と Information Model のバージョンは `MISSION_CONFIG`（`mission.json`）から読み込みます。
-- Document Collection のメンバーは、`DOCUMENT_DIR` 以下の Product_Document ラベル（`.lblx` と `.xml`）すべてです
-  （参照している文書ファイルがないラベルは、警告を出して除外します）。
-
-主な環境変数：`DOCUMENT_LID`、`COLLECTION_LID`、`VERSION_ID`、`TITLE`、`DESCRIPTION`、
-`PUBLICATION_YEAR`、`PUBLICATION_DATE`、`MODIFICATION_DATE`、`PDF_FILE`、
-`DOCUMENT_MODIFICATION_DESCRIPTION`、`COLLECTION_MODIFICATION_DESCRIPTION`、
-`DOCUMENT_OUTPUT`、`COLLECTION_OUTPUT`（`.lblx`）、`INVENTORY_OUTPUT`（`COLLECTION_OUTPUT` の `.lblx` を `.csv` にした名前）、
-`DOCUMENT_TEMPLATE`、`COLLECTION_TEMPLATE`、
-`MISSION_CONFIG`（既定：`config/mission.json`）、`INSTRUMENT_CONFIG`（既定：`config/instrument_pwi.json`）
-
-### Bundle：`create_psa_bundle_jinja.sh`
-
-```bash
-./examples/scripts/create_psa_bundle_jinja.sh [BUNDLE_DIR]
-```
-
-- 既定値：`BUNDLE_DIR=bc_mmo_pwi`
-- `BUNDLE_DIR` 以下の Collection ラベル（`*.lblx`）を集めて Bundle ラベルを作ります。`.xml` のラベルは使いません。
-- Bundle の title と description は `INSTRUMENT_CONFIG`（`instrument_*.json` の `bundle`）から、
-  Information Model のバージョンは `MISSION_CONFIG`（`mission.json`）から読み込みます。
-- Bundle ラベルには著者リストを出力しません。
-- 出力：`<BUNDLE_DIR>/<BUNDLE_NAME>.lblx`（例：`bc_mmo_pwi/bc_mmo_pwi.lblx`）
-- `python -m miopds_common validate --rule pds4.bundle --label-extension lblx` で Bundle 全体を検証します。
-  Validate 自身のレポート（`--report-file`）を `VALIDATE_REPORT` に、画面に出た内容を `VALIDATE_LOG` に保存します。
-
-主な環境変数：`BUNDLE_NAME`、`BUNDLE_LID`、`BUNDLE_VID`、`PUBLICATION_YEAR`、`MODIFICATION_DATE`、
-`OUTPUT_FILE`、`TEMPLATE_FILE`、`BUNDLE_LABEL_EXTENSION`（既定：`lblx`。空にすると Validate の既定の `xml`）、
-`VALIDATE_REPORT`、`VALIDATE_LOG`、
-`MISSION_CONFIG`（既定：`config/mission.json`）、`INSTRUMENT_CONFIG`（既定：`config/instrument_pwi.json`）
-
-## 共通の環境変数
-
-| 変数 | 意味 | 既定値 |
+| Environment variable | Meaning | Default |
 |---|---|---|
-| `VALIDATE_ENABLED` | `0` にすると検証を省略 | `1` |
-| `VALIDATE_BIN` | PDS Validate の実行ファイル | `$HOME/local/pds/validate-4.2.0/bin/validate` |
-| `VALIDATE_CATALOG` | XML Catalog のパス | `pds4-validate-catalog.xml` |
-| `REPORT_DIR` | 検証レポートの保存先（実行した場所からの相対パス） | `./pds_chk_log` |
-| `REPORT_TIMESTAMP` | レポートのファイル名に付ける日時 | 実行した日時 |
-| `PYTHON` | miopds_common をインストールした Python（**サーバーごとに指定**。上の「サーバーごとに使う Python を指定する」） | `python3` |
+| `PYTHON` | Python that has miopds_common installed | `python3` |
+| `VALIDATE_ENABLED` | `0` skips the validation | `1` |
+| `VALIDATE_BIN` | PDS Validate executable | Document: `$HOME/local/pds/validate-4.2.0/bin/validate`. Collection and Bundle: `$HOME/local/pds/validate/bin/validate` |
+| `VALIDATE_CATALOG` | Path of the XML Catalog (empty: no catalog) | `pds4-validate-catalog.xml` |
+| `REPORT_DIR` | Directory for the validation reports | `./pds_chk_log` |
+| `REPORT_TIMESTAMP` | Date and time in the report file names | The date and time of the run |
 
-検証を省略する例：
-
-```bash
-VALIDATE_ENABLED=0 ./examples/scripts/create_psa_bundle_jinja.sh bc_mmo_pwi
-```
-
-## PDS Validate の実行（validate サブコマンド）
-
-PDS Validate を実行し、出力を画面に表示しながらレポートファイルに保存します。
-各スクリプトの検証はこれで行います。単独で、生成済みのラベルを検証し直すこともできます。
+An example that skips the validation:
 
 ```bash
-python -m miopds_common validate TARGET --report SCREEN_LOG [--report-file VALIDATE_REPORT] \
-  [--validate-bin PATH] [--catalog CATALOG] [--rule pds4.bundle] [--label-extension lblx]
+VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
 ```
 
-- `--report` には画面に出た内容を保存します。`--report-file` は Validate 自身のレポートで、
-  Validate にそのまま渡します。2つに同じファイルは指定できません。
-- `--catalog` のファイルがない場合は、警告を出して `--catalog` なしで続けます（空文字ならカタログなし）。
-- 終了コードは Validate の終了コードをそのまま返します（0 以外ならスクリプトも止まります）。
+## Scripts
 
-## 既知の問題（今後の確認事項）
+The Bundle label is made from the Collection labels, so run the scripts in
+this order:
 
-- PDS Validate が、検証エラーを見つけたときに 0 以外の終了コードを返すかは未確認です。
-  0 を返す場合、エラーがあってもスクリプトは止まりません。レポートの内容を必ず確認してください。
-- 観測ラベルの数値型は、CDF のバイト順に関係なく `MSB` になります（リトルエンディアンの CDF では誤り。修正は保留中）。
+1. Observational labels (`make_pds_label_for_mmo_cdf_data.sh`)
+2. Data Collection (`create_psa_collection_jinja.sh`)
+3. Document (`create_psa_document_jinja.sh`; only when the Bundle includes
+   Documents)
+4. Bundle (`create_psa_bundle_jinja.sh`)
+
+`cron_mk_cdf_to_pds.sh` runs these four in order.
+
+### Observational labels: `make_pds_label_for_mmo_cdf_data.sh`
+
+Makes one observational label from one CDF file. This script does not
+validate.
+
+```bash
+./pds/scripts/make_pds_label_for_mmo_cdf_data.sh CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]
+```
+
+| Argument | Meaning |
+|---|---|
+| `CDF_FILE` | CDF file |
+| `TEMPLATE_DIR` | Template directory |
+| `TEMPLATE_NAME` | Template name. `""` means `mmo_cdf_label_template_multi_dataset.xml.j2` |
+| `OUTPUT_DIR` | Output directory |
+| `OPTIONS` | The arguments from the fifth on are passed to `python -m miopds_common cdf2pdslabel` as options |
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `TIMELINE` | Timeline file (required for now; see "Settings the current scripts need" above) | None |
+| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
+| `DATASET_CONFIG` | Dataset config file (the instrument and author config files are read from the paths written in it) | `config/dataset_pwi_efd.json` |
+
+The output is `OUTPUT_DIR/CDF file name.lblx` (the CDF file name with `.cdf`
+changed to `.lblx`). The mission phase is that of the period in the timeline
+that contains the observation start time. `--mission-phase-name` and
+`--mission-phase-id` given as options take priority over the timeline. To see
+the options, run `python -m miopds_common cdf2pdslabel --help`.
+
+An example:
+
+```bash
+./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  pds/templates "" \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231
+```
+
+The sample `dataset_pwi_efd.json` is rejected until its `REPLACE_` values are
+replaced.
+
+### Collection: `create_psa_collection_jinja.sh`
+
+Makes the label and inventory of a data Collection, and validates the
+Collection label.
+
+```bash
+./pds/scripts/create_psa_collection_jinja.sh [COLLECTION_NAME]
+```
+
+`COLLECTION_NAME` is the name of the Collection (default
+`data_calibrated_efd`). Only letters, digits, `_` and `-` can be used.
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `ARCHIVE_ROOT` | Location of the bundle directory (required for now) | A server-specific path |
+| `BUNDLE_NAME` | Bundle name | `bc_mmo_pwi` |
+| `COLLECTION_DIR` | Collection directory | `$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` |
+| `LABEL_DIR` | Directory searched for observational labels (subdirectories included) | `$COLLECTION_DIR` |
+| `COLLECTION_LID` | Collection LID | `urn:jaxa:darts:$BUNDLE_NAME:$COLLECTION_NAME` |
+| `OUTPUT_BASE` | Output file name without extension | `$COLLECTION_NAME` |
+| `TEMPLATE_FILE` | Template | `templates/collection_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
+| `DATASET_CONFIG` | Dataset config file | `config/dataset_pwi_efd.json` |
+| `MISSION_TIMELINE_FILE` | Timeline file (required for now; the script only checks that it is valid JSON and does not use it for the Collection) | `config/mission_timeline.json` |
+| `PUBLICATION_YEAR` | Publication year | `2027` |
+| `VERSION_ID` | Collection version | `1.0` |
+| `VALIDATE_REPORT` | File for what the validation printed | `$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_validate_report.txt` |
+| `SKIP_REPORT` | File listing the labels left out of the inventory | `$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_skipped_missing_cdf.txt` |
+
+The outputs are `OUTPUT_BASE.lblx` (label) and `OUTPUT_BASE.csv` (inventory)
+in `COLLECTION_DIR`. Only the observational labels whose CDF files exist enter
+the inventory. For a label whose CDF file is not found, the script prints a
+warning and saves the list of such labels in `SKIP_REPORT`. This list is not
+written in the Collection directory, so that no file without a label is placed
+in the archive. The Collection label made before is in `LABEL_DIR`, but it
+does not enter the inventory.
+
+The title and description of the Collection are read from `collection` in
+`DATASET_CONFIG`, and the Information Model version from `MISSION_CONFIG`.
+
+On macOS, this script stops with `find: -printf: unknown primary or operator`
+(Issue #7). On macOS, use the Python command of B in the quick start of
+[../README.md](../README.md).
+
+### Document: `create_psa_document_jinja.sh`
+
+Makes the Document label and the Document Collection (label and inventory)
+from a PDF, and validates the two labels.
+
+```bash
+./pds/scripts/create_psa_document_jinja.sh [DOCUMENT_DIR]
+```
+
+`DOCUMENT_DIR` is the directory of the PDF (default `bc_mmo_pwi/document`).
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `PDF_FILE` | PDF name (in `DOCUMENT_DIR`) | `bc_mmo_pwi_data_user_guide.pdf` |
+| `DOCUMENT_LID` | Document LID | `urn:jaxa:darts:bc_mmo_pwi:document:bc_mmo_pwi_data_user_guide` |
+| `COLLECTION_LID` | Document Collection LID | `urn:jaxa:darts:bc_mmo_pwi:document` |
+| `VERSION_ID` | Version | `1.0` |
+| `TITLE` | Document title | The title of the PWI data user guide |
+| `DESCRIPTION` | Document description | A description of the PWI data user guide |
+| `PUBLICATION_YEAR` | Publication year | `2027` |
+| `PUBLICATION_DATE` | Publication date | `2027` |
+| `MODIFICATION_DATE` | Modification date (`YYYY-MM-DD`) | The day of the run (UTC) |
+| `DOCUMENT_MODIFICATION_DESCRIPTION` | Description of the change of the Document label | A sentence saying that it is the first version |
+| `COLLECTION_MODIFICATION_DESCRIPTION` | Description of the change of the Document Collection | A sentence saying that it is the first version |
+| `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
+| `COLLECTION_OUTPUT` | Document Collection label name (`.lblx`) | `collection_bc_mmo_pwi_document.lblx` |
+| `INVENTORY_OUTPUT` | Inventory name (must be the `COLLECTION_OUTPUT` name with `.lblx` changed to `.csv`) | `collection_bc_mmo_pwi_document.csv` |
+| `DOCUMENT_TEMPLATE` | Document template | `templates/document_template.xml.j2` |
+| `COLLECTION_TEMPLATE` | Document Collection template | `templates/document_collection_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
+| `INSTRUMENT_CONFIG` | Instrument config file | `config/instrument_pwi.json` |
+| `DOCUMENT_REPORT` | File for the validation of the Document label | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_validate_report.txt` |
+| `COLLECTION_REPORT` | File for the validation of the Document Collection label | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_collection_validate_report.txt` |
+
+The outputs are three files in `DOCUMENT_DIR`: the Document label, the
+Document Collection label and the inventory. The members of the Document
+Collection are all the Product_Document labels (`.lblx` and `.xml`) in
+`DOCUMENT_DIR` whose document files exist. A label without its document file
+is reported as a warning and left out. The title and description of the
+Document Collection and the instrument name are read from `INSTRUMENT_CONFIG`,
+and the mission name and the Information Model version from `MISSION_CONFIG`.
+
+An example:
+
+```bash
+./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+```
+
+### Bundle: `create_psa_bundle_jinja.sh`
+
+Collects the Collection labels under the bundle directory, makes the Bundle
+label, and validates the whole Bundle.
+
+```bash
+./pds/scripts/create_psa_bundle_jinja.sh [BUNDLE_DIR]
+```
+
+`BUNDLE_DIR` is the bundle directory (default `bc_mmo_pwi`).
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `BUNDLE_NAME` | Bundle name | The last part of `BUNDLE_DIR` (e.g. `bc_mmo_pwi`) |
+| `BUNDLE_LID` | Bundle LID | `urn:jaxa:darts:$BUNDLE_NAME` |
+| `BUNDLE_VID` | Bundle version | `1.0` |
+| `PUBLICATION_YEAR` | Publication year | `2027` |
+| `MODIFICATION_DATE` | Modification date (`YYYY-MM-DD`) | The day of the run (UTC) |
+| `OUTPUT_FILE` | Bundle label name | `$BUNDLE_NAME.lblx` |
+| `TEMPLATE_FILE` | Template | `templates/bundle_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
+| `INSTRUMENT_CONFIG` | Instrument config file | `config/instrument_pwi.json` |
+| `BUNDLE_LABEL_EXTENSION` | Extension of the files that the validation treats as labels (empty: `xml`, the default of PDS Validate) | `lblx` |
+| `VALIDATE_REPORT` | File for PDS Validate's own report (`--report-file`) | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
+| `VALIDATE_LOG` | File for what the validation printed | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
+
+The output is `BUNDLE_DIR/OUTPUT_FILE` (e.g. `~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx`).
+Only the Collection labels with the extension `.lblx` under `BUNDLE_DIR`
+become members of the Bundle. The title and description of the Bundle are read
+from `bundle` in `INSTRUMENT_CONFIG`, and the Information Model version from
+`MISSION_CONFIG`. The Bundle label has no author list. The validation runs on
+the whole Bundle with `--rule pds4.bundle`.
+
+An example:
+
+```bash
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+```
+
+### Run everything and rebuild only what changed: `cron_mk_cdf_to_pds.sh`
+
+Makes the observational labels, the Collection, the Document and the Bundle in
+order, and rebuilds only the products whose inputs have changed. When it runs
+regularly, for example by cron, changes to the CDF files and the settings are
+carried over to the labels, the Collection and the Bundle.
+
+```bash
+./pds/scripts/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
+```
+
+| Argument | Meaning |
+|---|---|
+| `all` | Rebuild all products (`--all` also works) |
+| `BUNDLE_DIR` | Bundle directory (default `bc_mmo_pwi`) |
+
+The current script assumes this layout:
+
+```text
+BUNDLE_DIR/data_calibrated_efd/science/**/*.cdf   data (labels are written in the same directory as the CDF)
+BUNDLE_DIR/document/*.pdf                         documents (the Document step is skipped if absent)
+```
+
+So with the layout of the quick start (directories per phase and per year
+under the Collection), it stops with `ERROR: directory not found: .../science`
+(Issue #7).
+
+A product is rebuilt when its output does not exist, or when one of these
+inputs is newer than the output:
+
+| Output | Inputs |
+|---|---|
+| Observational label (per CDF) | The CDF file, the dataset config file |
+| Collection | Files and directories under `science/` (including added and removed ones) |
+| Document and Document Collection | The PDF (`PDF_FILE`) |
+| Bundle | The label of each Collection |
+| Every product | `templates/`, `config/`, `scripts/` and the Python code of miopds_common |
+
+Editing a template, a config file or a script rebuilds every product. The
+script starts Python once per CDF file for the observational labels, so it
+takes time when many CDF files are rebuilt.
+
+Edit these two places in the script for the instrument:
+
+| Place to edit | What to write |
+|---|---|
+| The `set_label_args` function | Extra options passed to `cdf2pdslabel` for each CDF file (mission phase, internal reference, ...) |
+| The `make_data_collection` lines | One line per data Collection, with its name and dataset config file. To add a Collection, add a line |
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `BUNDLE_NAME` | Bundle name (used in the lock name and the Bundle label name) | The last part of `BUNDLE_DIR` |
+| `PDF_FILE` | Name of the Document PDF | `bc_mmo_pwi_data_user_guide.pdf` |
+| `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
+| `COLLECTION_OUTPUT` | Document Collection label name | `collection_bc_mmo_pwi_document.lblx` |
+| `OUTPUT_FILE` | Bundle label name | The last part of `BUNDLE_DIR` + `.lblx` |
+| `DATASET_CONFIG` | Dataset config file of the data Collection | `config/dataset_pwi_efd.json` |
+| `TEMPLATES_DIR` | Template directory | `templates/` |
+| `CONFIG_DIR` | Config file directory | `config/` |
+| `LOCK_DIR` | Location of the lock | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
+
+The script runs by these rules:
+
+- Only one run at a time is allowed for the same bundle (the script uses a
+  lock). If `TMPDIR` differs between cron and runs by hand, give a fixed place
+  in `LOCK_DIR`. If a lock is left after an abnormal end, check that no other
+  run is active, and then remove the lock directory with `rmdir`.
+- All the reports of one run are saved in the same `REPORT_DIR`, with the same
+  date and time (`REPORT_TIMESTAMP`) in their names.
+- A label whose CDF file is gone is not removed; the script only prints a
+  warning (the label is left out of the Collection inventory).
+- Each instrument's pipeline makes the L2 CDF files and copies them into the
+  data directories before this script runs.
+
+## Related documents
+
+| Document | Contents |
+|---|---|
+| [../README.md](../README.md) | Installation, and the quick start that runs everything from the beginning |
+| [../docs/usage.md](../docs/usage.md) | Subcommands and options, Python usage, the `validate` subcommand, known issues |
+| [config/README.md](config/README.md) | The items of the config files, and where each value goes in the labels |

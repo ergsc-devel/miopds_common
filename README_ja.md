@@ -47,7 +47,7 @@ git clone https://github.com/ergsc-devel/miopds_common.git
 ### 3. venv を作ってインストールする
 
 venv の作り方は2通りあり、どちらか一方を使います。
-以下では、venv の場所を `~/mio_pds_validate` とします（`examples/README.md` と同じ名前です）。
+以下では、venv の場所を `~/mio_pds_validate` とします（`examples/README_ja.md` と同じ名前です）。
 
 Python 標準の venv を使う場合は、次の3つを順に実行します。
 
@@ -81,7 +81,7 @@ uv pip install --python ~/mio_pds_validate/bin/python ~/miopds_common
 `source ~/mio_pds_validate/bin/activate` は、venv を有効にするコマンドです。
 有効にすると、そのターミナルの `python` と `pip` が venv のものになります。
 新しいターミナルを開いたときは、もう一度実行してください。
-cron から実行するときは venv が有効にならないので、[examples/README.md](examples/README.md) の「サーバーごとに使う Python を指定する」の方法で Python を指定します。
+cron から実行するときは venv が有効にならないので、[examples/README_ja.md](examples/README_ja.md) の「サーバーごとに使う Python を指定する」の方法で Python を指定します。
 
 ### 4. インストールを確かめる
 
@@ -97,7 +97,7 @@ python -c 'import miopds_common; print(miopds_common.__file__)'
 手順は [docs/usage_ja.md](docs/usage_ja.md) の「開発」にあります。
 
 PDS Validate（検証に使う Java のツール）は、検証するときだけ必要です。
-インストールの手順は [examples/README.md](examples/README.md) の「PDS Validate 4.2.0 のインストール」にあります。
+インストールの手順は [examples/README_ja.md](examples/README_ja.md) の「PDS Validate 4.2.0 のインストール」にあります。
 
 ## クイックスタート
 
@@ -145,7 +145,7 @@ instrument_repo/                          # 機器のリポジトリ（例）
    ```
 
    ほかの機器では、`instrument_*.json`、`dataset_*.json`、`authors_*.json` も機器に合わせて作ります。
-   各項目の意味は [examples/config/README.md](examples/config/README.md) にあります。
+   各項目の意味は [examples/config/README_ja.md](examples/config/README_ja.md) にあります。
 
 3. venv を有効にします。
 
@@ -181,7 +181,7 @@ instrument_repo/                          # 機器のリポジトリ（例）
    引数は、変換する表、書き出す期間表の順です。
    表の最後のフェーズが `msp` でないときは、そのフェーズの終わりがわからないので、エラーになります。
    その場合は、`--end` で終わりの日時を指定します。
-   表の形式と変換の決まりは、[examples/config/README.md](examples/config/README.md) の「.tab から変換する」にあります。
+   表の形式と変換の決まりは、[examples/config/README_ja.md](examples/config/README_ja.md) の「.tab から変換する」にあります。
 
 表が更新されたら、変換し直してください。
 内容が変わっていないときは、`mission_timeline.json` を書き換えません。
@@ -378,7 +378,7 @@ Document を Bundle に入れるときは、Bundle を作る前に `create_psa_d
 ./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
 ```
 
-PDF の名前や Document の題名は、環境変数で変えます（[examples/README.md](examples/README.md) の「Document」）。
+PDF の名前や Document の題名は、環境変数で変えます（[examples/README_ja.md](examples/README_ja.md) の「Document」）。
 
 次に、`create_psa_bundle_jinja.sh` に Bundle のディレクトリを渡して、Bundle のラベルを作ります。
 
@@ -402,7 +402,7 @@ python -m miopds_common validate ~/pds4/bc_mmo_pwi \
   --label-extension lblx
 ```
 
-`--validate-bin` には、PDS Validate の実行ファイルを指定します（この例は、`examples/README.md` の手順でインストールした場所です）。
+`--validate-bin` には、PDS Validate の実行ファイルを指定します（この例は、`examples/README_ja.md` の手順でインストールした場所です）。
 検証の後は、終了コードにかかわらずレポートを読んでください。
 理由は [docs/usage_ja.md](docs/usage_ja.md) の「既知の問題」にあります。
 
@@ -410,7 +410,7 @@ python -m miopds_common validate ~/pds4/bc_mmo_pwi \
 
 `pds/scripts/cron_mk_cdf_to_pds.sh`（miopds_common では `examples/scripts/cron_mk_cdf_to_pds.sh`）は、A から D までと Document の作成を順に実行し、入力が変わった製品だけを作り直します。
 cron で定期的に実行することを想定しています。
-使い方は [examples/README.md](examples/README.md) を見てください。
+使い方は [examples/README_ja.md](examples/README_ja.md) を見てください。
 
 ただし、今のスクリプトは Collection の下の `science/` を探すので、この構成では最初の段階で止まります（Issue #7）。
 
@@ -419,6 +419,6 @@ cron で定期的に実行することを想定しています。
 | 文書 | 内容 |
 |---|---|
 | [docs/usage_ja.md](docs/usage_ja.md) | パッケージの手順書（サブコマンドとオプション、Python からの使い方、設定ファイル、検証、開発） |
-| [examples/README.md](examples/README.md) | shell スクリプトと、その実行のしかた |
-| [examples/config/README.md](examples/config/README.md) | 設定ファイルの項目と、ラベルのどこに入るか |
+| [examples/README_ja.md](examples/README_ja.md) | shell スクリプトの引数、環境変数、出力 |
+| [examples/config/README_ja.md](examples/config/README_ja.md) | 設定ファイルの項目と、ラベルのどこに入るか |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | git のブランチと、その運用（英語） |

@@ -85,7 +85,7 @@ uv pip install --python ~/mio_pds_validate/bin/python ~/miopds_common
 `source ~/mio_pds_validate/bin/activate` activates the venv. After it, `python`
 and `pip` in that terminal are the ones in the venv. Run it again whenever you
 open a new terminal. cron does not activate the venv; to give the Python for
-cron, see "サーバーごとに使う Python を指定する" in
+cron, see "Choosing the Python on each server" in
 [examples/README.md](examples/README.md).
 
 ### 4. Check the installation
@@ -104,7 +104,7 @@ To use the package while editing its code, install it with `pip install -e`.
 See "Development" in [docs/usage.md](docs/usage.md).
 
 PDS Validate (the Java tool for validation) is needed only for validation. For
-its installation, see "PDS Validate 4.2.0 のインストール" in
+its installation, see "Installing PDS Validate 4.2.0" in
 [examples/README.md](examples/README.md).
 
 ## Quick start
@@ -158,7 +158,7 @@ The observational labels are written in the same directory as the CDF files.
 
    For other instruments, also write `instrument_*.json`, `dataset_*.json` and
    `authors_*.json` for the instrument. The meaning of each item is in
-   [examples/config/README.md](examples/config/README.md) (Japanese).
+   [examples/config/README.md](examples/config/README.md).
 
 3. Activate the venv.
 
@@ -198,8 +198,8 @@ example).
    The arguments are the table to convert and the timeline to write, in this
    order. If the last phase in the table is not `msp`, its end is unknown and
    the command fails. In that case, give the end time with `--end`. For the
-   table format and the conversion rules, see ".tab から変換する" in
-   [examples/config/README.md](examples/config/README.md) (Japanese).
+   table format and the conversion rules, see "Converting from .tab" in
+   [examples/config/README.md](examples/config/README.md).
 
 When the table is updated, convert it again. If the content has not changed,
 `mission_timeline.json` is not rewritten.
@@ -422,7 +422,7 @@ Document Collection, and validates them.
 ```
 
 Change the PDF name and the Document title with environment variables (see
-"Document" in [examples/README.md](examples/README.md), Japanese).
+"Document" in [examples/README.md](examples/README.md)).
 
 Then give the bundle directory to `create_psa_bundle_jinja.sh` to make the
 Bundle label.
@@ -460,8 +460,7 @@ validation, read the report whatever the exit status is. The reason is in
 `pds/scripts/cron_mk_cdf_to_pds.sh` (`examples/scripts/cron_mk_cdf_to_pds.sh`
 in miopds_common) runs A to D and the Document step in
 order, and rebuilds only the products whose inputs have changed. It is meant to
-be run regularly by cron. See [examples/README.md](examples/README.md)
-(Japanese).
+be run regularly by cron. See [examples/README.md](examples/README.md).
 
 However, the current script looks for `science/` under the Collection, so it
 stops at the first step with this layout (Issue #7).
@@ -471,6 +470,6 @@ stops at the first step with this layout (Issue #7).
 | Document | Contents |
 |---|---|
 | [docs/usage.md](docs/usage.md) | Package guide: subcommands and options, Python usage, config files, validation, development |
-| [examples/README.md](examples/README.md) | Shell scripts and how to run them (Japanese) |
-| [examples/config/README.md](examples/config/README.md) | Config files and where each value goes in the labels (Japanese) |
+| [examples/README.md](examples/README.md) | Shell scripts: arguments, environment variables and outputs |
+| [examples/config/README.md](examples/config/README.md) | Config files and where each value goes in the labels |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Git branches and their policies |
