@@ -1,238 +1,271 @@
-# config
+# Sample config files (examples/config)
 
-PDS4 ラベル生成に使う設定ファイル（JSON）の見本です。
-各機器のリポジトリにコピーし、機器・データセットに合わせて書き換えて使います。
+[日本語](README_ja.md)
 
-> **使うサブコマンド**（`python -m miopds_common ...`）：`cdf2pdslabel`（mission、dataset）、
-> `labels2collection`（mission、dataset）、`collections2bundle`（mission、instrument）、
-> `pdf2pdslabel` と `pdf2document`（mission、instrument）。
-> Document 製品そのものの値（title、PDF のファイル名など）は、コマンド引数や shell の環境変数で指定します。
+`examples/config/` holds sample config files (JSON) used to make PDS4 labels.
+Copy them with `examples/` into the instrument repository (e.g. `pds/config/`),
+and adapt them to the instrument and dataset.
 
-## ファイルの構成
+This document explains the meaning of each item in the config files, and which
+element of which label each value goes to.
 
-PDS4 アーカイブの構造に合わせて、4つの階層に分けています。
+## Files and the subcommands that read them
 
-| ファイル | 階層 | 対応する PDS4 の単位 |
+The config files are split into four levels, following the structure of the
+PDS4 archive.
+
+| File | Level | PDS4 unit | Read by (`python -m miopds_common ...`) |
+|---|---|---|---|
+| `mission.json` | Mission (shared by Mio/BepiColombo) | — | All subcommands |
+| `instrument_pwi.json` | Instrument | Bundle (e.g. `bc_mmo_pwi`) | `collections2bundle`, `pdf2document`. `cdf2pdslabel` reads it through `instrument_file` in `dataset_*.json` |
+| `dataset_pwi_efd.json` | Dataset | Data Collection (e.g. `data_calibrated_efd`) | `cdf2pdslabel`, `labels2collection` |
+| `authors_pwi_efd.json` | Author list | `List_Author` of the observational labels | `cdf2pdslabel` (through `authors_file` in `dataset_*.json`) |
+
+`pdf2pdslabel` reads only `mission.json`. The values of the Document itself
+(title, PDF name and so on) are given as command arguments or as environment
+variables of the shell scripts.
+
+The timeline (`mission_timeline.json`), which decides the mission phase and
+target from the observation date, is not kept in this repository, because the
+periods of the phases are not public. For how to make it, see "How the mission
+phase and target are decided" below.
+
+## Common rules
+
+- JSON allows no comments. The meaning of each item is described in this
+  document.
+- A comma after the last element is an error (e.g. `["a", "b",]` is not
+  allowed).
+- A relative path is resolved from the directory of the JSON file, not from
+  the directory where you run the command.
+- A value that starts with `REPLACE_` is a placeholder that you must replace.
+  If one is left, the file is rejected when it is read, even if the command
+  does not use that item.
+
+  ```text
+  ERROR: .../dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced
+  ```
+
+## How to read the tables (label kinds and XML locations)
+
+The tables below show which XML element of which label each JSON item goes
+to. There are five kinds of labels:
+
+| Name in the tables | Label (outermost element) | Made by |
 |---|---|---|
-| `mission.json` | ミッション（Mio/BepiColombo 共通） | — |
-| `instrument_pwi.json` | 機器 | Bundle（例：`bc_mmo_pwi`） |
-| `dataset_pwi_efd.json` | データセット | Data Collection（例：`data_calibrated_efd`） |
-| `authors_pwi_efd.json` | 著者リスト | 各ラベルの `List_Author` |
-| `mission_timeline.example.json` | ミッションの期間表（任意） | — |
+| Observational | Observational label (`Product_Observational`), one per CDF file | `cdf2pdslabel` |
+| Collection | Label of a data Collection (`Product_Collection`) | `labels2collection` |
+| Bundle | Bundle label (`Product_Bundle`) | `collections2bundle` |
+| Document | Document label (`Product_Document`) | `pdf2pdslabel`, `pdf2document` |
+| Document Collection | Label of the document Collection (`Product_Collection`) | `pdf2document` |
 
-`mission_timeline.json`（観測日でミッションフェーズとターゲットを決める期間表）は**非公開**なので、
-日付を入れた本物はこのリポジトリに置きません。見本の `mission_timeline.example.json`（日付は `REPLACE_`）を
-サーバーにコピーして使います。下の「mission_timeline.json の置き場所と使い方」を参照してください。
+- "XML location" is the path from just inside the outermost element.
+  `A/B/c` means "`c` in `B` in `A`".
+- Elements that start with `psa:` or `msn:` are defined in the PSA dictionary
+  or the Mission dictionary (this mark is called a namespace prefix).
+- To find where the value of a label element comes from, see "Tracing back
+  from the labels" below. It also lists values that come from outside JSON
+  (CDF, command arguments).
 
-## 共通の規則
+## mission.json (shared by the mission)
 
-- **JSON にはコメントを書けません。** 各項目の意味はこの README に書いています。
-- **最後の要素の後ろにカンマを付けるとエラーになります**（例：`["a", "b",]` は不可）。
-- **相対パスは、その JSON ファイルが置かれているディレクトリを基準に解釈します。**
-  実行した場所（カレントディレクトリ）は基準になりません。
-- **`REPLACE_` で始まる値はプレースホルダーです。** 使う前に必ず書き換えてください。
-  1つでも残っていると、そのファイルを読み込んだ時点でエラーになります
-  （そのコマンドが使わない項目でも同じです）。例：
-  `ERROR: .../dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced`
+| Item | Label | XML location | Description |
+|---|---|---|---|
+| `information_model_version` | All | `Identification_Area/information_model_version` | Version of the PDS4 Information Model |
+| `investigation.name` / `.type` / `.lid` | Observational, Document Collection | `name` / `type` / `Internal_Reference/lid_reference` of `Investigation_Area`. `Investigation_Area` is in `Observation_Area` in the observational labels, and in `Context_Area` in the Document Collection | The mission (BepiColombo) |
+| `instrument_host.name` / `.lid` | Observational | `name` / `Internal_Reference/lid_reference` of `Observation_Area/Observing_System/Observing_System_Component` whose `type` is `Host` | The spacecraft (MMO) |
+| `cdf_parsing_standard_id` | Observational | `File_Area_Observational/Header/parsing_standard_id` | Standard for parsing the CDF header |
+| `default_mission_phase.name` | Observational | Two places: `Observation_Area/Mission_Area/psa:Mission_Information/psa:Mission_Phase/psa:name` and `Observation_Area/Discipline_Area/msn:Mission_Information/msn:mission_phase_name` | Name of the default mission phase |
+| `default_mission_phase.id` | Observational | `Observation_Area/Mission_Area/psa:Mission_Information/psa:Mission_Phase/psa:id` | ID of the default mission phase |
+| `default_target.name` / `.type` / `.lid` | Observational | `name` / `type` / `Internal_Reference/lid_reference` of `Observation_Area/Target_Identification` | Default target |
 
-## 表の読み方（ラベルの種類と XML の場所）
+`default_mission_phase` and `default_target` are used when neither the command
+arguments nor the timeline decide the value (see "How the mission phase and
+target are decided" below).
 
-以下の表では、JSON の各項目が「どのラベルの、どの XML 要素に入るか」を示します。
-ラベルは次の5種類です。
+## instrument_pwi.json (instrument = Bundle unit)
 
-| 表での呼び方 | ラベル（一番外側の要素） | 作るサブコマンド |
+| Item | Label | XML location | Description |
+|---|---|---|---|
+| `instrument.name` | Observational, Document Collection | Observational: `name` of `Observation_Area/Observing_System/Observing_System_Component` whose `type` is `Instrument`. Document Collection: `Context_Area/Observing_System/Observing_System_Component/name` | Instrument name |
+| `instrument.lid` | Observational | `Internal_Reference/lid_reference` of the observational `Observing_System_Component` above | LID of the instrument context product |
+| `bundle.title` | Bundle | `Identification_Area/title` | Bundle title |
+| `bundle.description` | Bundle | `Identification_Area/Citation_Information/description` | Bundle description |
+| `document_collection.title` | Document Collection | `Identification_Area/title` | Title |
+| `document_collection.citation_description` | Document Collection | `Identification_Area/Citation_Information/description` | Description for citation |
+| `document_collection.collection_description` | Document Collection | `Collection/description` | Collection description |
+
+The pair of the instrument name and the instrument LID is defined by the rules
+of the BepiColombo dictionary (e.g. PWI is
+`urn:jaxa:darts:context:instrument:mmo.pwi`).
+
+## dataset_pwi_efd.json (dataset = Data Collection unit)
+
+| Item | Label | XML location | Description |
+|---|---|---|---|
+| `instrument_file` | — | — | Path to the instrument config file (relative to this file) |
+| `authors_file` | — | — | Path to the author list (relative to this file) |
+| `purpose` | Observational | `Observation_Area/Primary_Result_Summary/purpose` | Purpose of the data |
+| `processing_level` | Observational | `Observation_Area/Primary_Result_Summary/processing_level` | Processing level |
+| `science_facets.domains` | Observational | `Observation_Area/Primary_Result_Summary/Science_Facets/domain` | List of domains. Each element of the list becomes one `domain` |
+| `science_facets.discipline_name` | Observational | `Observation_Area/Primary_Result_Summary/Science_Facets/discipline_name` | Discipline |
+| `science_facets.facet1` / `.facet2` | Observational | `Observation_Area/Primary_Result_Summary/Science_Facets/facet1` / `facet2` | Subdivisions of the discipline. If one does not apply, leave out the item (the element is not written either; an empty string is an error) |
+| `cdf.time_variable` | Observational | `Observation_Area/Time_Coordinates/start_date_time` / `stop_date_time` | The variable name does not go into the label. The first and last values of this CDF variable become the start and stop times of the observation |
+| `cdf.epoch_variable` | — | — | Does not go into the label. Used to check that it has as many records as the time variable, and for the number of elements on the time axis of the arrays |
+| `collection.collection_type` | Collection | `Collection/collection_type` | Collection type |
+| `collection.title` | Collection | `Identification_Area/title` | Title |
+| `collection.citation_description` | Collection | `Identification_Area/Citation_Information/description` | Description for citation |
+| `collection.collection_description` | Collection | `Collection/description` | Collection description |
+
+The values allowed for `purpose`, `processing_level` and the items of
+Science_Facets are defined by the PDS4 standards. PDS Validate finds wrong
+values.
+
+This file holds the title and description of the Collection on the
+assumption that one Data Collection holds only one kind of dataset. If one
+Collection holds several datasets, they cannot be written in this form.
+
+## authors_*.json (author list)
+
+The author list is a list of objects. Each element needs all three items
+below, and empty strings are not allowed. The author list goes only into the
+observational labels (not into the Collection, Bundle or Document labels).
+Each element of the list becomes one `Person`, in the order written.
+
+| Item | Label | XML location | Example |
+|---|---|---|---|
+| `display_full_name` | Observational | `Identification_Area/Citation_Information/List_Author/Person/display_full_name` | `"Shinbori, A."` |
+| `given_name` | Observational | `Identification_Area/Citation_Information/List_Author/Person/given_name` | `"A."` |
+| `family_name` | Observational | `Identification_Area/Citation_Information/List_Author/Person/family_name` | `"Shinbori"` |
+
+`authors_instrument_example.json` is a blank list to start from, and
+`authors_pwi_efd.json` is a filled-in example.
+
+## Tracing back from the labels
+
+The figures below show where the value of each label element comes from.
+"Argument" in the figures is an option of `python -m miopds_common SUBCOMMAND`
+(the shell scripts pass it from environment variables or arguments).
+
+`logical_identifier` holds the whole LID, not only the ID part. A LID joins,
+after the prefix, the bundle ID, the Collection ID and the product ID, as far
+as the level of the product, separated by colons (`:`).
+
+| Product | Form of the LID | Example |
 |---|---|---|
-| 観測 | 観測ラベル（`Product_Observational`）。CDF ごとに1つ | `cdf2pdslabel` |
-| Collection | データの Collection のラベル（`Product_Collection`） | `labels2collection` |
-| Bundle | Bundle のラベル（`Product_Bundle`） | `collections2bundle` |
-| Document | 文書のラベル（`Product_Document`） | `pdf2pdslabel`、`pdf2document` |
-| Document Collection | 文書の Collection のラベル（`Product_Collection`） | `pdf2document` |
+| Bundle | `prefix:bundle ID` | `urn:jaxa:darts:bc_mmo_pwi` |
+| Collection | `prefix:bundle ID:Collection ID` | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
+| Product (observational data, document) | `prefix:bundle ID:Collection ID:product ID` | `urn:jaxa:darts:bc_mmo_pwi:document:bc_mmo_pwi_data_user_guide` |
 
-- 「XML の場所」は、一番外側の要素のすぐ内側からのパスです。
-  `A/B/c` は「`A` の中の `B` の中の `c`」という意味です。
-- `psa:` や `msn:` で始まる要素は、PSA の辞書や Mission の辞書で定められた要素です
-  （この印を名前空間の接頭辞といいます）。
-- ラベルの要素から値の出どころを探すときは、下の「ラベルから逆引きする」を見てください。
-  JSON 以外（CDF、コマンドの引数）から来る値も載せています。
+In the shell scripts, `BUNDLE_NAME` is the bundle ID, and the first argument
+of `create_psa_collection_jinja.sh` (`COLLECTION_NAME`) is the Collection ID.
+The shell scripts add the prefix `urn:jaxa:darts` to them to make the whole
+LID (you can also give the whole LID with `BUNDLE_LID` and `COLLECTION_LID`).
 
-## mission.json（ミッション共通）
+The rules for LIDs are in the PDS4 Data Provider's Handbook 1.22.0. The
+allowed characters (lower-case letters, digits, `-`, `.` and `_`; `:` only as
+a separator) and the length (up to 255 characters) are in Section 5.1 (p.21),
+and how to construct a LID is in Section 5.2 (p.22). The complete rules are in
+Section 6D.2 of the Standards Reference, which the Handbook refers to. The
+prefix `urn:jaxa:darts` is a JAXA rule and is not in the Handbook (the
+Handbook's examples are `urn:nasa:pds` and `urn:esa:psa`).
 
-| 項目 | ラベル | XML の場所 | 説明 |
-|---|---|---|---|
-| `information_model_version` | すべて | `Identification_Area/information_model_version` | PDS4 Information Model のバージョン |
-| `investigation.name` / `.type` / `.lid` | 観測、Document Collection | `Investigation_Area` の `name` / `type` / `Internal_Reference/lid_reference`。`Investigation_Area` は、観測では `Observation_Area` の中、Document Collection では `Context_Area` の中 | ミッション（BepiColombo）の情報 |
-| `instrument_host.name` / `.lid` | 観測 | `Observation_Area/Observing_System/Observing_System_Component`（`type` が `Host` のもの）の `name` / `Internal_Reference/lid_reference` | 探査機（MMO）の情報 |
-| `cdf_parsing_standard_id` | 観測 | `File_Area_Observational/Header/parsing_standard_id` | CDF ヘッダーの解釈規格 |
-| `default_mission_phase.name` | 観測 | `Observation_Area/Mission_Area/psa:Mission_Information/psa:Mission_Phase/psa:name` と `Observation_Area/Discipline_Area/msn:Mission_Information/msn:mission_phase_name` の2か所 | 既定のミッションフェーズの名前 |
-| `default_mission_phase.id` | 観測 | `Observation_Area/Mission_Area/psa:Mission_Information/psa:Mission_Phase/psa:id` | 既定のミッションフェーズの ID |
-| `default_target.name` / `.type` / `.lid` | 観測 | `Observation_Area/Target_Identification` の `name` / `type` / `Internal_Reference/lid_reference` | 既定のターゲット |
-
-`default_mission_phase` と `default_target` は、コマンドの引数でも期間表でも決まらないときに使う値です
-（下の「ミッションフェーズとターゲットの決め方」）。
-
-## instrument_pwi.json（機器 = Bundle 単位）
-
-| 項目 | ラベル | XML の場所 | 説明 |
-|---|---|---|---|
-| `instrument.name` | 観測、Document Collection | 観測：`Observation_Area/Observing_System/Observing_System_Component`（`type` が `Instrument` のもの）の `name`。Document Collection：`Context_Area/Observing_System/Observing_System_Component/name` | 機器名 |
-| `instrument.lid` | 観測 | 上の観測の `Observing_System_Component` の `Internal_Reference/lid_reference` | 機器の context 製品の LID |
-| `bundle.title` | Bundle | `Identification_Area/title` | Bundle の題名 |
-| `bundle.description` | Bundle | `Identification_Area/Citation_Information/description` | Bundle の説明 |
-| `document_collection.title` | Document Collection | `Identification_Area/title` | 題名 |
-| `document_collection.citation_description` | Document Collection | `Identification_Area/Citation_Information/description` | 引用用の説明 |
-| `document_collection.collection_description` | Document Collection | `Collection/description` | Collection の説明 |
-
-機器名と機器 LID の組み合わせは、BepiColombo 辞書の規則で決められています
-（例：PWI は `urn:jaxa:darts:context:instrument:mmo.pwi`）。
-
-## dataset_pwi_efd.json（データセット = Data Collection 単位）
-
-| 項目 | ラベル | XML の場所 | 説明 |
-|---|---|---|---|
-| `instrument_file` | — | — | 機器ファイルへのパス（このファイルからの相対パス） |
-| `authors_file` | — | — | 著者リストへのパス（このファイルからの相対パス） |
-| `purpose` | 観測 | `Observation_Area/Primary_Result_Summary/purpose` | データの目的 |
-| `processing_level` | 観測 | `Observation_Area/Primary_Result_Summary/processing_level` | 処理レベル |
-| `science_facets.domains` | 観測 | `Observation_Area/Primary_Result_Summary/Science_Facets/domain` | 対象領域のリスト。リストの要素ごとに `domain` が1つずつ入る |
-| `science_facets.discipline_name` | 観測 | `Observation_Area/Primary_Result_Summary/Science_Facets/discipline_name` | 分野 |
-| `science_facets.facet1` / `.facet2` | 観測 | `Observation_Area/Primary_Result_Summary/Science_Facets/facet1` / `facet2` | 分野の細分類。該当しない場合は項目ごと省略する（要素も出力されない。空文字はエラー） |
-| `cdf.time_variable` | 観測 | `Observation_Area/Time_Coordinates/start_date_time` / `stop_date_time` | 変数名はラベルに入らない。この CDF 変数の最初と最後の値が、観測の開始・終了時刻として入る |
-| `cdf.epoch_variable` | — | — | ラベルには入らない。time 変数とレコード数が同じかの確認と、配列の時間軸の要素数に使う |
-| `collection.collection_type` | Collection | `Collection/collection_type` | Collection の種類 |
-| `collection.title` | Collection | `Identification_Area/title` | 題名 |
-| `collection.citation_description` | Collection | `Identification_Area/Citation_Information/description` | 引用用の説明 |
-| `collection.collection_description` | Collection | `Collection/description` | Collection の説明 |
-
-`purpose`、`processing_level`、Science_Facets の各項目に書ける値は、PDS4 の規格で決められています。
-誤った値は PDS Validate で検出されます。
-
-> **未確認の前提**：「1つの Data Collection には、profile が同じデータセットが1種類だけ入る」と仮定して、
-> Collection の説明をこのファイルに持たせています。1つの Collection に複数のデータセットが入る場合は、
-> Collection の説明を別ファイルに分ける必要があります。
-
-## authors_*.json（著者リスト）
-
-オブジェクトのリストです。各要素には次の3項目がすべて必要で、空文字は使えません。
-著者リストが入るのは**観測ラベルだけ**です（Collection・Bundle・Document のラベルには入りません）。
-リストの要素ごとに `Person` が1つずつ、書いた順に入ります。
-
-| 項目 | ラベル | XML の場所 | 例 |
-|---|---|---|---|
-| `display_full_name` | 観測 | `Identification_Area/Citation_Information/List_Author/Person/display_full_name` | `"Shinbori, A."` |
-| `given_name` | 観測 | `Identification_Area/Citation_Information/List_Author/Person/given_name` | `"A."` |
-| `family_name` | 観測 | `Identification_Area/Citation_Information/List_Author/Person/family_name` | `"Shinbori"` |
-
-`authors_instrument_example.json` がひな形、`authors_pwi_efd.json` が記入例です。
-
-## ラベルから逆引きする
-
-ラベルの要素ごとに、値の出どころを示します。
-「引数」は `python -m miopds_common <サブコマンド>` のオプションです（shell では環境変数や引数から渡されます）。
-
-`logical_identifier` に入るのは、ID の部分だけではなく **LID 全体**です。LID は、接頭辞のあとに
-Bundle ID・Collection ID・製品 ID を、製品の階層に応じてコロン（`:`）で区切ってつないだものです。
-
-| 製品 | LID の形 | 例 |
-|---|---|---|
-| Bundle | `<接頭辞>:<Bundle ID>` | `urn:jaxa:darts:bc_mmo_pwi` |
-| Collection | `<接頭辞>:<Bundle ID>:<Collection ID>` | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
-| 製品（観測データ、文書） | `<接頭辞>:<Bundle ID>:<Collection ID>:<製品 ID>` | `urn:jaxa:darts:bc_mmo_pwi:document:bc_mmo_pwi_data_user_guide` |
-
-shell では、`BUNDLE_NAME` が Bundle ID、`create_psa_collection_jinja.sh` の1番目の引数（`COLLECTION_NAME`）が
-Collection ID で、shell がこれらに接頭辞 `urn:jaxa:darts` を付けて LID 全体を作ります
-（`BUNDLE_LID`・`COLLECTION_LID` で LID 全体を直接指定することもできます）。
-LID の決まり（使える文字、長さなど）は、PDS Data Provider's Handbook 1.22.0 の 5.2 節を参照してください。
-
-### 観測ラベル（Product_Observational）
+### Observational label (Product_Observational)
 
 ```text
 Product_Observational
 ├─ Identification_Area
-│  ├─ logical_identifier .......... CDF の属性 PDS_LOGICAL_IDENTIFIER（製品の LID 全体。YYYYMMDD はファイル名の日付に置き換え）
-│  ├─ version_id .................. CDF の属性 PDS_VERSION_IDENTIFIER（なければ 1.0）
-│  ├─ title ....................... CDF の属性 TITLE（なければ CDF のファイル名）
+│  ├─ logical_identifier .......... CDF attribute PDS_LOGICAL_IDENTIFIER (whole product LID; YYYYMMDD is replaced with the date in the file name)
+│  ├─ version_id .................. CDF attribute PDS_VERSION_IDENTIFIER (1.0 if absent)
+│  ├─ title ....................... CDF attribute TITLE (if absent, the CDF file name without its extension)
 │  ├─ information_model_version ... mission.json: information_model_version
 │  ├─ Citation_Information
-│  │  ├─ publication_year ......... 引数 --publication-year（なければ CDF の更新日時の年）
-│  │  ├─ description .............. 引数 --description（なければ CDF の属性 Logical_source_description、次に TITLE）
-│  │  └─ List_Author/Person ....... authors_*.json（dataset_*.json の authors_file）
-│  └─ Modification_History ........ 実行した日（UTC）と、引数 --modification-description
+│  │  ├─ publication_year ......... argument --publication-year (if absent, the year of the CDF modification time)
+│  │  ├─ description .............. argument --description (if absent, CDF attribute Logical_source_description, then TITLE)
+│  │  └─ List_Author/Person ....... authors_*.json (authors_file in dataset_*.json)
+│  └─ Modification_History ........ the day of the run (UTC), and argument --modification-description
 ├─ Observation_Area
-│  ├─ Time_Coordinates ............ CDF 変数（dataset_*.json: cdf.time_variable）の最初と最後の値
-│  ├─ Primary_Result_Summary ...... dataset_*.json: purpose、processing_level、science_facets
+│  ├─ Time_Coordinates ............ first and last values of the CDF variable (dataset_*.json: cdf.time_variable)
+│  ├─ Primary_Result_Summary ...... dataset_*.json: purpose, processing_level, science_facets
 │  ├─ Investigation_Area .......... mission.json: investigation
 │  ├─ Observing_System
-│  │  ├─ Component（type が Host） ......... mission.json: instrument_host
-│  │  └─ Component（type が Instrument） ... instrument_*.json: instrument（dataset_*.json の instrument_file）
-│  ├─ Target_Identification ....... 引数 --target-* → 期間表の targets → mission.json: default_target（この優先順）
+│  │  ├─ Component (type Host) ......... mission.json: instrument_host
+│  │  └─ Component (type Instrument) ... instrument_*.json: instrument (instrument_file in dataset_*.json)
+│  ├─ Target_Identification ....... argument --target-* → targets in the timeline → mission.json: default_target (in this order)
 │  ├─ Mission_Area
 │  │  ├─ psa:Mission_Information
-│  │  │  ├─ psa:spacecraft_clock_start_count / stop_count ... CDF の属性 PDS_SCLK_START_COUNT / PDS_SCLK_STOP_COUNT
-│  │  │  └─ psa:Mission_Phase ..... 引数 --mission-phase-* → 期間表の mission_phases → mission.json: default_mission_phase
-│  │  └─ psa:Processing_Context ... CDF の属性 GENERATION_SOFTWARE、SOFTWARE_VERSION、SOURCE_FILE
-│  └─ Discipline_Area/msn:Mission_Information ... ミッションフェーズの名前と SCLK（上と同じ値）
-├─ Reference_List ................. 引数 --internal-reference（指定したときだけ出力）
+│  │  │  ├─ psa:spacecraft_clock_start_count / stop_count ... CDF attributes PDS_SCLK_START_COUNT / PDS_SCLK_STOP_COUNT
+│  │  │  └─ psa:Mission_Phase ..... argument --mission-phase-* → mission_phases in the timeline → mission.json: default_mission_phase
+│  │  └─ psa:Processing_Context ... CDF attributes GENERATION_SOFTWARE, SOFTWARE_VERSION, SOURCE_FILE
+│  └─ Discipline_Area/msn:Mission_Information ... name of the mission phase and SCLK (same values as above)
+├─ Reference_List ................. argument --internal-reference (written only when given)
 └─ File_Area_Observational
-   ├─ File ........................ CDF ファイルそのもの（名前、更新日時、サイズ、MD5）
-   ├─ Header ...................... 引数 --header-length、mission.json: cdf_parsing_standard_id
-   └─ Array / Table_Binary ........ CDF の各変数（名前、位置、型、属性 CATDESC・UNITS・FILLVAL・VALIDMIN・VALIDMAX）
+   ├─ File ........................ the CDF file itself (name, modification time, size, MD5)
+   ├─ Header ...................... argument --header-length, mission.json: cdf_parsing_standard_id
+   └─ Array / Table_Binary ........ each CDF variable (name, offset, type, attributes CATDESC, UNITS, FILLVAL, VALIDMIN, VALIDMAX)
 ```
 
-### データの Collection（Product_Collection）
+### Data Collection (Product_Collection)
 
 ```text
 Product_Collection
 ├─ Identification_Area
-│  ├─ logical_identifier .......... 引数（Collection の LID 全体。shell は urn:jaxa:darts:<BUNDLE_NAME>:<COLLECTION_NAME> から作る）
-│  ├─ version_id .................. 引数 --version-id
+│  ├─ logical_identifier .......... argument (whole Collection LID; the shell scripts make it from urn:jaxa:darts:BUNDLE_NAME:COLLECTION_NAME)
+│  ├─ version_id .................. argument --version-id
 │  ├─ title ....................... dataset_*.json: collection.title
 │  ├─ information_model_version ... mission.json: information_model_version
 │  └─ Citation_Information
-│     ├─ publication_year ......... 引数 --publication-year
+│     ├─ publication_year ......... argument --publication-year
 │     └─ description .............. dataset_*.json: collection.citation_description
 ├─ Collection
 │  ├─ collection_type ............. dataset_*.json: collection.collection_type
 │  └─ description ................. dataset_*.json: collection.collection_description
-└─ File_Area_Inventory ............ 作ったインベントリ（.csv）の名前、サイズ、MD5、行数
+└─ File_Area_Inventory ............ name, size, MD5 and number of rows of the inventory (.csv) made
 ```
 
-### Bundle（Product_Bundle）
+### Bundle (Product_Bundle)
 
 ```text
 Product_Bundle
 ├─ Identification_Area
-│  ├─ logical_identifier .......... 引数 --bundle-lid（Bundle の LID 全体。shell は urn:jaxa:darts:<BUNDLE_NAME> から作る）
-│  ├─ version_id .................. 引数 --version-id
+│  ├─ logical_identifier .......... argument --bundle-lid (whole bundle LID; the shell scripts make it from urn:jaxa:darts:BUNDLE_NAME)
+│  ├─ version_id .................. argument --version-id
 │  ├─ title ....................... instrument_*.json: bundle.title
 │  ├─ information_model_version ... mission.json: information_model_version
 │  ├─ Citation_Information
-│  │  ├─ publication_year ......... 引数 --publication-year
+│  │  ├─ publication_year ......... argument --publication-year
 │  │  └─ description .............. instrument_*.json: bundle.description
-│  └─ Modification_History ........ 引数 --modification-date（なければ実行した日）、--modification-description
-├─ Bundle/bundle_type ............. 固定（Archive）
-└─ Bundle_Member_Entry ............ Bundle のディレクトリ以下で見つけた Collection のラベル（LID と種類）
+│  └─ Modification_History ........ argument --modification-date (if absent, the day of the run), --modification-description
+├─ Bundle/bundle_type ............. fixed (Archive)
+└─ Bundle_Member_Entry ............ the Collection labels found under the bundle directory (LID and kind)
 ```
 
-### Document と Document Collection
+### Document and Document Collection
 
-| ラベル | JSON から来る値 | それ以外 |
+| Label | Values from JSON | Other values |
 |---|---|---|
-| Document（`Product_Document`） | mission.json：`information_model_version` | LID、題名、説明、出版年・出版日、版、言語、PDF のファイル名は、すべて引数 |
-| Document Collection（`Product_Collection`） | mission.json：`information_model_version`、`investigation`。instrument_*.json：`instrument.name`、`document_collection` の3項目 | LID、版、出版年、変更履歴は引数。`collection_type` は固定（Document） |
+| Document (`Product_Document`) | mission.json: `information_model_version` | LID, title, description, publication year and date, version, language and PDF file name are all arguments |
+| Document Collection (`Product_Collection`) | mission.json: `information_model_version`, `investigation`. instrument_*.json: `instrument.name`, the three items of `document_collection` | LID, version, publication year and modification history are arguments. `collection_type` is fixed (Document) |
 
-## ミッションフェーズとターゲットの決め方
+## How the mission phase and target are decided
 
-次の優先順位で決めます。
+The mission phase and target of an observational label are decided in this
+order:
 
-1. **コマンドの引数**（`--mission-phase-name`、`--mission-phase-id`、`--target-name` など）
-2. **`mission_timeline.json`**：指定した場合だけ使う。観測開始時刻が入る期間の値を使い、
-   どの期間にも入らない場合はエラーにする
-3. **`mission.json` の `default_mission_phase` / `default_target`**
+1. Command arguments (`--mission-phase-name`, `--mission-phase-id`,
+   `--target-name` and so on)
+2. The timeline (`mission_timeline.json`), only when it is given. The values
+   of the period that contains the observation start time are used; if the
+   start time is in no period, it is an error
+3. `default_mission_phase` and `default_target` in `mission.json`
 
-timeline がない間は、既定値（Mercury Science Phase / `msp`）以外の期間のデータを処理するとき、
-1 の引数を必ず指定してください。指定を忘れると、既定値のまま出力されます。
+When you use the Python commands without a timeline, give the arguments of
+item 1 for data from periods other than Mercury Science Phase (`msp`).
+Otherwise the defaults are written to the labels. The current shell scripts do
+not work without the timeline file (see "Settings the current scripts need" in
+[../README.md](../README.md)).
 
-### mission_timeline.json の書式
+### Format of mission_timeline.json
 
 ```json
 {
@@ -246,89 +279,117 @@ timeline がない間は、既定値（Mercury Science Phase / `msp`）以外の
 }
 ```
 
-- フェーズとターゲットは切り替わる時期が異なるため、別々のリストにしています。
-- 各期間は「start 以上 stop 未満」です。境界の時刻ちょうどは、後の期間に入ります。
-- 期間の境界をまたぐ製品は、観測開始時刻で判定します（PSA の規則は未確認）。
-- 期間が重なっている場合や、start が stop 以降の場合は、読み込み時にエラーになります。
-- 日時にタイムゾーンがない場合は UTC とみなします。
+- The phases and the targets change at different times, so they are in
+  separate lists.
+- Each period covers "start or later, and before stop". A time exactly on a
+  boundary belongs to the later period.
+- A product that crosses a period boundary is judged by its observation start
+  time.
+- Overlapping periods, and a start that is not before its stop, are errors
+  when the file is read.
+- A date and time without a time zone is taken as UTC.
 
-各項目が入るのは観測ラベルだけで、場所は `mission.json` の既定値と同じです
-（`mission_phases[]` は「`mission_phases` のリストの各要素」という意味です）。
+Each item goes only into the observational labels, at the same places as the
+defaults in `mission.json` (`mission_phases[]` means "each element of the
+`mission_phases` list").
 
-| 項目 | ラベル | XML の場所 |
+| Item | Label | XML location |
 |---|---|---|
-| `mission_phases[].name` | 観測 | `default_mission_phase.name` と同じ2か所 |
-| `mission_phases[].id` | 観測 | `default_mission_phase.id` と同じ場所 |
-| `targets[].name` / `.type` / `.lid` | 観測 | `default_target` と同じ場所 |
-| `start` / `stop` | — | ラベルには入らない。観測開始時刻がどの期間に入るかの判定に使う |
+| `mission_phases[].name` | Observational | The same two places as `default_mission_phase.name` |
+| `mission_phases[].id` | Observational | The same place as `default_mission_phase.id` |
+| `targets[].name` / `.type` / `.lid` | Observational | The same places as `default_target` |
+| `start` / `stop` | — | Do not go into the label. Used to find the period that contains the observation start time |
 
-### mission_timeline.json の置き場所と使い方
+### Where to keep mission_timeline.json and how to use it
 
-フェーズの期間は公開されていないため、本物の期間表は**サーバーにだけ置き、git では管理しません**。
+The periods of the phases are not public, so keep the real timeline only on
+the server, not in git.
 
-1. 期間表を作ります。次のどちらかの方法で、サーバー上のリポジトリの外に置きます
-   （例：`~/pds_config/mission_timeline.json`）。
-   - **ミッションフェーズの表（`.tab`）から変換する**（下の「.tab から変換する」）
-   - **手で書く**：見本 `mission_timeline.example.json` をコピーし、
-     `REPLACE_START_UTC`・`REPLACE_STOP_UTC` を本物の日時に書き換え、必要なフェーズの行を足す。
-     `REPLACE_` が1つでも残っていると、読み込んだ時点でエラーになります。
-2. 使うときは、環境変数 `MISSION_TIMELINE` に期間表のパスを指定します。
-   `make_pds_label_for_mmo_cdf_data.sh` が `--timeline` を付けて `cdf2pdslabel` に渡します。
-   cron では crontab の行に書きます（`../README.md` を参照）。
+1. Make the timeline and put it outside the repository on the server (e.g.
+   `~/pds_config/mission_timeline.json`). There are two ways to make it:
+   - Convert the team's mission phase table (`.tab`) (see "Converting from
+     .tab" below)
+   - Write a file in the format above, with the real dates and times
+2. To use the timeline, give its path to `--timeline` of the Python commands.
+   With the current shell scripts, give it in the environment variables
+   `TIMELINE` (observational labels) and `MISSION_TIMELINE_FILE` (Collection)
+   (see "Settings the current scripts need" in [../README.md](../README.md)).
+   When you run them by cron, write these environment variables in the crontab
+   line.
 
-- `.gitignore` は `mission_timeline.json` という名前のファイルを除外します。
-  誤ってリポジトリの中に置いても push はされませんが、名前を変えると除外されないので、
-  置き場所はリポジトリの外にしてください。
-- データの全期間を、すき間なく書いてください。どの期間にも入らない観測があるとエラーになります。
-- 終わりが決まっていないフェーズの `stop` には、遠い未来の日時（例：`2100-01-01T00:00:00Z`）を入れます。
-- `targets` は省略できます。省略すると、ターゲットは `mission.json` の `default_target` になります。
-  クルーズ中やフライバイの時期のターゲットの決め方は未確認です（PSA のガイドで確認が必要）。
+Follow these rules when you write the timeline:
 
-### .tab から変換する（tab2timeline）
+- `.gitignore` excludes files named `mission_timeline.json` and
+  `mission_*.tab`. If you put one in the repository by mistake, it is not
+  pushed; but a renamed file is not excluded, so keep the files outside the
+  repository.
+- Cover the whole period of the data without gaps. An observation in no period
+  is an error.
+- For the `stop` of a phase whose end is not decided, write a date far in the
+  future (e.g. `2100-01-01T00:00:00Z`).
+- `targets` can be left out. Then the target is `default_target` in
+  `mission.json`.
 
-ミッションフェーズの表（`.tab`。日付は非公開）から、`mission_timeline.json` を作ります。miopds_commonリポジトリの親ディレクトリに移動し、以下を実行します。
+### Converting from .tab (tab2timeline)
+
+Make `mission_timeline.json` from the team's mission phase table (`.tab`; the
+dates are not public). In this example, the table `mission_phases.tab` is in
+`~/pds_config/`.
 
 ```bash
-python -m miopds_common tab2timeline <ミッションフェーズの表>.tab ~/pds_config/mission_timeline.json
+python -m miopds_common tab2timeline ~/pds_config/mission_phases.tab ~/pds_config/mission_timeline.json
 ```
 
-表の形式（1行が1つのフェーズの開始。カンマ区切りで、空白で幅をそろえてある）：
+Each line of the table is the start of one phase. The columns are separated by
+commas and aligned with spaces.
 
 ```text
 # Start Time            ,Mission Phase Acronym ,Mission Phase Name ,Path to folder
 YYYY-MM-DDThh:mm:ss.sssZ ,cruise                ,Cruise             ,cruise
 ```
 
-| 表の列 | `mission_timeline.json` での使い方 |
+| Column of the table | Use in `mission_timeline.json` |
 |---|---|
-| Start Time | そのフェーズの `start`。前のフェーズの `stop` にもなる |
+| Start Time | `start` of the phase. It is also the `stop` of the previous phase |
 | Mission Phase Acronym | `id` |
 | Mission Phase Name | `name` |
-| Path to folder | 使わない |
+| Path to folder | Not used |
 
-- `#` で始まる行（ヘッダー）と空行は読み飛ばします。
-- 各フェーズの `stop` は、次のフェーズの `Start Time` です。同じフェーズが続く行は1つの期間にまとめます。
-- **最後のフェーズは `msp` でなければなりません。** その `stop` は `2100-01-01T00:00:00Z` になります
-  （`--end` で変更できます）。最後が `msp` 以外の表は、終わりがわからないのでエラーになります。
-  そのフェーズの終わりの日時を `--end` で指定すれば変換できます。
-- `Start Time` が増えていない行、列の数が4つでない行、日時の書式が正しくない行はエラーになります
-  （エラーには行番号が出ます）。
-- 書き出す前に、使うときと同じ確認（期間の重なりなど）をします。
-- **略称（Mission Phase Acronym）が PSA の辞書の ID と同じ綴りかは確認しません。**
-  初めて変換したときは、出てきた略称を下の「ミッションフェーズとして使える値」と見比べてください。
-- 表に変更があったら、変換し直してください。内容が変わったときだけ `mission_timeline.json` を書き換えるので、
-  `cron_mk_cdf_to_pds.sh` は次の実行で観測ラベルを作り直します。
-  内容が変わらないときは書き換えない（ファイルの日時も変わらない）ので、
-  cron で毎回変換しても、観測ラベルが毎回作り直されることはありません。
+The conversion follows these rules:
 
-### ミッションフェーズとして使える値
+- Lines that start with `#` (header) and empty lines are skipped.
+- The `stop` of each phase is the `Start Time` of the next phase. Consecutive
+  lines of the same phase are merged into one period.
+- The last phase must be `msp`. Its `stop` is `2100-01-01T00:00:00Z` (change
+  it with `--end`). A table whose last phase is not `msp` is an error, because
+  its end is unknown; give the end time of that phase with `--end` to convert
+  it.
+- A line whose `Start Time` does not increase, a line without exactly four
+  columns, and a line with a wrong date format are errors (the error shows the
+  line number).
+- Before writing, the same checks as when the timeline is used (overlapping
+  periods and so on) are made.
+- It is not checked that the acronyms (Mission Phase Acronym) are spelled the
+  same as the IDs in the PSA dictionary. After the first conversion, compare
+  the acronyms with "Values allowed for the mission phase" below.
+- When the table changes, convert it again. `mission_timeline.json` is
+  rewritten only when its content changes, so `cron_mk_cdf_to_pds.sh` rebuilds
+  the observational labels at the next run. When the content does not change,
+  the file is not rewritten (its time stamp does not change either), so
+  converting it at every cron run does not rebuild the observational labels
+  every time.
 
-使える name と id の組は、PSA が公開している BepiColombo ミッション辞書のスキーマトロンで決められています。
+### Values allowed for the mission phase
+
+The allowed pairs of name and id are defined by the Schematron of the
+BepiColombo mission dictionary published by PSA:
 
 - https://psa.esa.int/psa/bc/v1/PDS4_BC_1M00_2010.sch
-  （2026-10-01 に辞書バージョン 2.0.1.0 で確認。**辞書のバージョンアップで変わることがある**ので、
-  必ず配信に使う辞書のバージョンで確認してください）
+  (checked on 2026-10-01 with dictionary version 2.0.1.0. They may change
+  when the dictionary is updated, so check them with the dictionary version
+  used for delivery)
 
-例：`Cruise` / `cruise`、`Mercury Orbit Commissioning Phase` / `mocp`、`Mercury Science Phase` / `msp`
+Examples: `Cruise` / `cruise`, `Mercury Orbit Commissioning Phase` / `mocp`,
+`Mercury Science Phase` / `msp`
 
-一覧にない値は PDS Validate でエラーになります。
+A value that is not in the list is an error in PDS Validate.
