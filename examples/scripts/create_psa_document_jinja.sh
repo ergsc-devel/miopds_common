@@ -50,7 +50,7 @@ REPORT_TIMESTAMP="${REPORT_TIMESTAMP:-$(date '+%Y%m%d_%H%M%S')}"
 DOCUMENT_REPORT="${DOCUMENT_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_validate_report.txt}"
 COLLECTION_REPORT="${COLLECTION_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_collection_validate_report.txt}"
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"   # 0: skip validation / 0 なら検証しない
-VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate-4.2.0/bin/validate}"
+VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
 
 # Python that has miopds_common installed. It differs between servers

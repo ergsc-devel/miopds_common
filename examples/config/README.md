@@ -261,9 +261,9 @@ order:
 
 When you use the Python commands without a timeline, give the arguments of
 item 1 for data from periods other than Mercury Science Phase (`msp`).
-Otherwise the defaults are written to the labels. The current shell scripts do
-not work without the timeline file (see "Settings the current scripts need" in
-[../README.md](../README.md)).
+Otherwise the defaults are written to the labels. The shell scripts take the
+timeline from the environment variable `MISSION_TIMELINE`; without it, the
+shell scripts do not use a timeline.
 
 ### Format of mission_timeline.json
 
@@ -311,11 +311,9 @@ the server, not in git.
      .tab" below)
    - Write a file in the format above, with the real dates and times
 2. To use the timeline, give its path to `--timeline` of the Python commands.
-   With the current shell scripts, give it in the environment variables
-   `TIMELINE` (observational labels) and `MISSION_TIMELINE_FILE` (Collection)
-   (see "Settings the current scripts need" in [../README.md](../README.md)).
-   When you run them by cron, write these environment variables in the crontab
-   line.
+   With the shell scripts, give it in the environment variable
+   `MISSION_TIMELINE`. When you run them by cron, write this environment
+   variable in the crontab line.
 
 Follow these rules when you write the timeline:
 
@@ -374,7 +372,8 @@ The conversion follows these rules:
   the acronyms with "Values allowed for the mission phase" below.
 - When the table changes, convert it again. `mission_timeline.json` is
   rewritten only when its content changes, so `cron_mk_cdf_to_pds.sh` rebuilds
-  the observational labels at the next run. When the content does not change,
+  the observational labels at the next run, as long as the timeline is given
+  in `MISSION_TIMELINE`. When the content does not change,
   the file is not rewritten (its time stamp does not change either), so
   converting it at every cron run does not rebuild the observational labels
   every time.

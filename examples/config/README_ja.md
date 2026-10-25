@@ -231,7 +231,8 @@ Product_Bundle
 
 Python のコマンドで期間表を使わないときは、Mercury Science Phase（`msp`）以外の期間のデータに、1 の引数を指定してください。
 指定しないと、既定値のままラベルに入ります。
-今の shell スクリプトは、期間表のファイルがないと動きません（[../README_ja.md](../README_ja.md) の「今のスクリプトに必要な設定」）。
+shell スクリプトでは、期間表を環境変数 `MISSION_TIMELINE` で指定します。
+指定しないときは、shell スクリプトは期間表を使いません。
 
 ### mission_timeline.json の書式
 
@@ -271,8 +272,8 @@ Python のコマンドで期間表を使わないときは、Mercury Science Pha
    - チームのミッションフェーズの表（`.tab`）から変換する（下の「.tab から変換する」）
    - 上の書式のとおりにファイルを作り、本物の日時を書く
 2. 期間表を使うときは、Python のコマンドでは `--timeline` にそのパスを指定します。
-   今の shell スクリプトでは、環境変数 `TIMELINE`（観測ラベル）と `MISSION_TIMELINE_FILE`（Collection）に指定します（[../README_ja.md](../README_ja.md) の「今のスクリプトに必要な設定」）。
-   cron で実行するときは、これらの環境変数を crontab の行に書きます。
+   shell スクリプトでは、環境変数 `MISSION_TIMELINE` に指定します。
+   cron で実行するときは、この環境変数を crontab の行に書きます。
 
 期間表を書くときの決まりは、次のとおりです。
 
@@ -317,7 +318,7 @@ YYYY-MM-DDThh:mm:ss.sssZ ,cruise                ,Cruise             ,cruise
 - 略称（Mission Phase Acronym）が PSA の辞書の ID と同じ綴りかは、確かめません。
   初めて変換したときは、出てきた略称を、下の「ミッションフェーズとして使える値」と見比べてください。
 - 表が変わったら、変換し直してください。
-  内容が変わったときだけ `mission_timeline.json` を書き換えるので、`cron_mk_cdf_to_pds.sh` は次の実行で観測ラベルを作り直します。
+  内容が変わったときだけ `mission_timeline.json` を書き換えるので、`MISSION_TIMELINE` で期間表を指定していれば、`cron_mk_cdf_to_pds.sh` は次の実行で観測ラベルを作り直します。
   内容が変わらないときは書き換えない（ファイルの日時も変わらない）ので、cron で毎回変換しても、観測ラベルが毎回作り直されることはありません。
 
 ### ミッションフェーズとして使える値

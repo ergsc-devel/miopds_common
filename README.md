@@ -129,14 +129,17 @@ instrument_repo/                          # instrument repository (example)
 └── bc_mmo_pwi/                           # bundle directory
     └── data_calibrated_efd/              # Collection directory
         ├── cruise/                       # data of Cruise
-        │   └── sc/
-        │       └── YYYY0101_YYYY1231/    # directory per year (CDF files)
+        │   └── data_type/                # data type (replace the name)
+        │       └── YYYYMMDD_YYYYMMDD/    # directory per month (CDF files)
         └── mercury_science_orbit/        # data of Mercury Science Phase
-            └── sc/
-                └── YYYY0101_YYYY1231/
+            └── data_type/
+                └── YYYYMMDD_YYYYMMDD/
 ```
 
-The observational labels are written in the same directory as the CDF files.
+Replace `data_type` with the name of the data type (also in the command
+examples below). The name of a monthly directory is the first and last day of
+the month (e.g. `20270101_20270131`). The observational labels are written in
+the same directory as the CDF files.
 
 1. Copy `examples/` into the instrument repository as `pds/`. Run this while
    `pds/` does not exist yet (if it exists, `pds/examples/` is created
@@ -212,43 +215,26 @@ templates and config files from `pds/templates/` and `pds/config/`, and save
 the validation reports in `pds_chk_log/` in the repository. If you use only
 the Python commands, skip this section.
 
-The current scripts do not work with this layout unless you set the following
-four environment variables. This is a bug, to be fixed in
-[Issue #7](https://github.com/ergsc-devel/miopds_common/issues/7).
-
-| Environment variable | Value | Used by |
-|---|---|---|
-| `TIMELINE` | Timeline file | Observational labels (A) |
-| `MISSION_TIMELINE_FILE` | Timeline file | Collection (B) |
-| `ARCHIVE_ROOT` | Location of the bundle directory | Collection (B) |
-| `VALIDATE_BIN` | PDS Validate executable | Collection (B), Bundle (C) |
-
-Even if you do not use a timeline, the current scripts stop without the
-timeline file. Make the timeline first in "Make the timeline" above.
+The shell scripts take the timeline from the environment variable
+`MISSION_TIMELINE`. The observational label script takes the mission phase
+from the timeline only when `MISSION_TIMELINE` is set; otherwise it uses the
+default in `mission.json` (Mercury Science Phase). If you made the timeline in
+"Make the timeline" above, set it with the command below.
 
 `export` sets an environment variable and passes it to the commands run later
-in that terminal. Run these four commands in order. Run them again whenever
-you open a new terminal.
+in that terminal. Run it again whenever you open a new terminal.
 
 ```bash
-export TIMELINE=~/pds_config/mission_timeline.json
-```
-
-```bash
-export MISSION_TIMELINE_FILE=~/pds_config/mission_timeline.json
-```
-
-```bash
-export ARCHIVE_ROOT=~/pds4
-```
-
-```bash
-export VALIDATE_BIN=~/local/pds/validate-4.2.0/bin/validate
+export MISSION_TIMELINE=~/pds_config/mission_timeline.json
 ```
 
 Except for the observational label script, the shell scripts validate the
-labels they make with PDS Validate. If PDS Validate is not installed yet, skip
-the validation with this command:
+labels they make with PDS Validate. They look for PDS Validate at
+`~/local/pds/validate/bin/validate` (for the installation, see "Installing PDS
+Validate 4.2.0" in [examples/README.md](examples/README.md)). If you put it
+somewhere else, give that location in the environment variable
+`VALIDATE_BIN`. If PDS Validate is not installed yet, skip the validation with
+this command:
 
 ```bash
 export VALIDATE_ENABLED=0
@@ -262,9 +248,9 @@ Make one observational label from one CDF file.
 
 ```bash
 python -m miopds_common cdf2pdslabel \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231 \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
   --mission-config pds/config/mission.json \
   --dataset-config pds/config/dataset_pwi_efd.json
 ```
@@ -278,7 +264,7 @@ name must contain an 8-digit date between `_` characters, such as
 To process all the CDF files of the Collection, repeat the command with `for`.
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
+for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
     pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
@@ -287,8 +273,8 @@ for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
 done
 ```
 
-`*/sc/*/*.cdf` matches the CDF files in the directories of every phase and
-every year. `"$(dirname "$cdf")"` is the directory of that CDF file, so each
+`*/*/*/*.cdf` matches the CDF files in the directories of every phase, data
+type and month. `"$(dirname "$cdf")"` is the directory of that CDF file, so each
 label is written beside its CDF file.
 
 If you do not give the mission phase, the default in `mission.json` (Mercury
@@ -306,9 +292,9 @@ CDF file.
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | Order | Argument | Value in this example |
@@ -316,23 +302,27 @@ CDF file.
 | 1 | CDF file | `~/pds4/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
 | 2 | Template directory | `pds/templates` |
 | 3 | Template name (`""` means `mmo_cdf_label_template_multi_dataset.xml.j2`) | `""` |
-| 4 | Output directory | `~/pds4/.../20270101_20271231` |
+| 4 | Output directory | `~/pds4/.../20270101_20270131` |
 
 Arguments after the fourth are passed to `cdf2pdslabel` as options (e.g.
 `--mission-phase-name Cruise --mission-phase-id cruise`). The script reads the
 config files `pds/config/mission.json` and `pds/config/dataset_pwi_efd.json`
 (change them with the environment variables `MISSION_CONFIG` and
-`DATASET_CONFIG`). The mission phase comes from the timeline in the
-environment variable `TIMELINE`. This script does not validate.
+`DATASET_CONFIG`). The mission phase comes from the timeline when the
+environment variable `MISSION_TIMELINE` is set, and from the defaults in
+`mission.json` when it is not. This script does not validate.
 
-To process all the CDF files of the Collection, repeat it with `for`, as with
-the Python command.
+To process all the CDF files of the Collection, give the Collection directory
+to `make_all_pds_label_for_collection.sh`.
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
-  ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh "$cdf" pds/templates "" "$(dirname "$cdf")"
-done
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
 ```
+
+This script finds the CDF files in any directory under the Collection, and
+makes all the observational labels again (it does not change the Collection
+label and inventory). Arguments after the first are passed to `cdf2pdslabel`
+as options for each CDF file.
 
 ### B. Make labels up to the Collection
 
@@ -362,7 +352,8 @@ python -m miopds_common labels2collection \
 | 5 | Output file name without extension | `data_calibrated_efd` |
 
 With the Collection directory as the first argument, the command collects the
-observational labels from the directories of every phase and year. The
+observational labels from the directories of every phase, data type and
+month. The
 Collection label made before is in the same directory, but it does not enter
 the inventory. The outputs are `data_calibrated_efd.lblx` (label) and
 `data_calibrated_efd.csv` (inventory) in `~/pds4/bc_mmo_pwi/data_calibrated_efd/`.
@@ -375,19 +366,18 @@ Give the Collection name to `create_psa_collection_jinja.sh`. It makes the
 label and inventory of the Collection, and validates the Collection label.
 
 ```bash
-./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
-The Collection directory is `$ARCHIVE_ROOT/bc_mmo_pwi/data_calibrated_efd`
-(`~/pds4/bc_mmo_pwi/data_calibrated_efd` in this example). Change the bundle
-name with the environment variable `BUNDLE_NAME` (default `bc_mmo_pwi`). The
-validation report is saved in `pds_chk_log/` with the date and time in its
-name.
-
-On macOS, this script stops with
-`find: -printf: unknown primary or operator` (Issue #7). On macOS, use the
-Python command above. The `find` of Linux has this feature, so the script
-should not stop there, but this is not checked yet.
+The Collection directory is given in the environment variable
+`COLLECTION_DIR`. `COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd`
+before the command passes the environment variable to this run only. The
+Collection name in the argument is used in the Collection LID and the output
+file name. Without `COLLECTION_DIR`, the script uses
+`$ARCHIVE_ROOT/$BUNDLE_NAME/data_calibrated_efd` (the default of
+`ARCHIVE_ROOT` is the current directory). Change the bundle name with the
+environment variable `BUNDLE_NAME` (default `bc_mmo_pwi`). The validation
+report is saved in `pds_chk_log/` with the date and time in its name.
 
 ### C. Make labels up to the Bundle
 
@@ -445,7 +435,7 @@ so this step is not needed.
 ```bash
 python -m miopds_common validate ~/pds4/bc_mmo_pwi \
   --report pds_chk_log/bundle_screen.log \
-  --validate-bin ~/local/pds/validate-4.2.0/bin/validate \
+  --validate-bin ~/local/pds/validate/bin/validate \
   --rule pds4.bundle \
   --label-extension lblx
 ```
@@ -462,8 +452,9 @@ in miopds_common) runs A to D and the Document step in
 order, and rebuilds only the products whose inputs have changed. It is meant to
 be run regularly by cron. See [examples/README.md](examples/README.md).
 
-However, the current script looks for `science/` under the Collection, so it
-stops at the first step with this layout (Issue #7).
+The parent script also takes the mission phase of the observational labels
+from the timeline only when `MISSION_TIMELINE` is set as in "Preparing to use
+the shell scripts" above.
 
 ## Documentation
 

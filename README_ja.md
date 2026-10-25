@@ -120,13 +120,15 @@ instrument_repo/                          # 機器のリポジトリ（例）
 └── bc_mmo_pwi/                           # Bundle のディレクトリ
     └── data_calibrated_efd/              # Collection のディレクトリ
         ├── cruise/                       # Cruise のデータ
-        │   └── sc/
-        │       └── YYYY0101_YYYY1231/    # 年ごとのディレクトリ（CDF を置く）
+        │   └── data_type/                # データの種類（名前は読み替える）
+        │       └── YYYYMMDD_YYYYMMDD/    # 月ごとのディレクトリ（CDF を置く）
         └── mercury_science_orbit/        # Mercury Science Phase のデータ
-            └── sc/
-                └── YYYY0101_YYYY1231/
+            └── data_type/
+                └── YYYYMMDD_YYYYMMDD/
 ```
 
+`data_type` は、データの種類の名前に読み替えてください（以下のコマンドの例でも同じです）。
+月ごとのディレクトリの名前は、その月の初日と末日です（例：`20270101_20270131`）。
 観測ラベルは、CDF と同じディレクトリに作ります。
 
 1. `examples/` を、`pds/` という名前で機器のリポジトリにコピーします。
@@ -192,40 +194,21 @@ A〜D の各手順は、Python のコマンドのほかに、`pds/scripts/` の 
 shell スクリプトは、テンプレートと設定ファイルを `pds/templates/` と `pds/config/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
 Python のコマンドだけを使うときは、この節を飛ばしてください。
 
-今のスクリプトは、次の4つの環境変数を指定しないと、この構成では動きません。
-これは不具合で、[Issue #7](https://github.com/ergsc-devel/miopds_common/issues/7) で直す予定です。
-
-| 環境変数 | 指定する値 | 使うスクリプト |
-|---|---|---|
-| `TIMELINE` | 期間表のファイル | 観測ラベル（A） |
-| `MISSION_TIMELINE_FILE` | 期間表のファイル | Collection（B） |
-| `ARCHIVE_ROOT` | Bundle のディレクトリを置いた場所 | Collection（B） |
-| `VALIDATE_BIN` | PDS Validate の実行ファイル | Collection（B）、Bundle（C） |
-
-期間表を使わない場合も、今のスクリプトは期間表のファイルがないと止まります。
-上の「期間表を作る」で、先に期間表を作ってください。
+shell スクリプトでは、期間表を環境変数 `MISSION_TIMELINE` で指定します。
+観測ラベルのスクリプトは、`MISSION_TIMELINE` を指定したときだけ、期間表からミッションフェーズを決めます。
+指定しないときは、`mission.json` の既定値（Mercury Science Phase）を使います。
+上の「期間表を作る」で期間表を作ったときは、次のコマンドで指定しておいてください。
 
 `export` は、環境変数を設定して、そのターミナルでこのあと実行するコマンドに渡すコマンドです。
-次の4つを順に実行します。
 新しいターミナルを開いたときは、もう一度実行してください。
 
 ```bash
-export TIMELINE=~/pds_config/mission_timeline.json
-```
-
-```bash
-export MISSION_TIMELINE_FILE=~/pds_config/mission_timeline.json
-```
-
-```bash
-export ARCHIVE_ROOT=~/pds4
-```
-
-```bash
-export VALIDATE_BIN=~/local/pds/validate-4.2.0/bin/validate
+export MISSION_TIMELINE=~/pds_config/mission_timeline.json
 ```
 
 観測ラベルのスクリプトを除き、shell スクリプトは作ったラベルを PDS Validate で検証します。
+PDS Validate は `~/local/pds/validate/bin/validate` から探します（インストールの手順は [examples/README_ja.md](examples/README_ja.md) の「PDS Validate 4.2.0 のインストール」）。
+ほかの場所に置いたときは、環境変数 `VALIDATE_BIN` にその場所を指定します。
 PDS Validate をまだインストールしていないときは、次のコマンドで検証を省けます。
 
 ```bash
@@ -240,9 +223,9 @@ CDF ファイル1つから、観測ラベルを1つ作ります。
 
 ```bash
 python -m miopds_common cdf2pdslabel \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231 \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
   --mission-config pds/config/mission.json \
   --dataset-config pds/config/dataset_pwi_efd.json
 ```
@@ -254,7 +237,7 @@ CDF のファイル名には、`_20270101_` のように `_` で挟んだ8桁の
 Collection の CDF ファイルをすべて処理するときは、`for` で1つずつ繰り返します。
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
+for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
     pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
@@ -263,7 +246,7 @@ for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
 done
 ```
 
-`*/sc/*/*.cdf` は、すべてのフェーズの、すべての年のディレクトリにある CDF に一致します。
+`*/*/*/*.cdf` は、すべてのフェーズ、データの種類、月のディレクトリにある CDF に一致します。
 `"$(dirname "$cdf")"` は、その CDF があるディレクトリです。ラベルは CDF と同じディレクトリにできます。
 
 ミッションフェーズを指定しないと、`mission.json` の既定値（Mercury Science Phase、`msp`）がラベルに入ります。
@@ -278,9 +261,9 @@ done
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | 順番 | 引数 | この例の値 |
@@ -288,20 +271,21 @@ done
 | 1 | CDF ファイル | `~/pds4/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
 | 2 | テンプレートのディレクトリ | `pds/templates` |
 | 3 | テンプレートの名前（`""` にすると `mmo_cdf_label_template_multi_dataset.xml.j2`） | `""` |
-| 4 | 出力先のディレクトリ | `~/pds4/.../20270101_20271231` |
+| 4 | 出力先のディレクトリ | `~/pds4/.../20270101_20270131` |
 
 5つ目以降の引数は、`cdf2pdslabel` のオプションとしてそのまま渡ります（例：`--mission-phase-name Cruise --mission-phase-id cruise`）。
 設定ファイルは `pds/config/mission.json` と `pds/config/dataset_pwi_efd.json` を読みます（環境変数 `MISSION_CONFIG` と `DATASET_CONFIG` で変えられます）。
-ミッションフェーズは、環境変数 `TIMELINE` の期間表から決まります。
+ミッションフェーズは、環境変数 `MISSION_TIMELINE` を指定したときは期間表から、指定しないときは `mission.json` の既定値から決まります。
 このスクリプトは検証をしません。
 
-Collection の CDF ファイルをすべて処理するときは、Python のコマンドと同じように `for` で繰り返します。
+Collection の CDF ファイルをすべて処理するときは、`make_all_pds_label_for_collection.sh` に Collection のディレクトリを渡します。
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/sc/*/*.cdf; do
-  ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh "$cdf" pds/templates "" "$(dirname "$cdf")"
-done
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
 ```
+
+このスクリプトは、Collection の下のどのディレクトリにある CDF も探し、すべての観測ラベルを作り直します（Collection のラベルとインベントリは変えません）。
+2つ目以降の引数は、各 CDF の `cdf2pdslabel` のオプションとしてそのまま渡ります。
 
 ### B. 観測ラベルから Collection まで作る
 
@@ -329,7 +313,7 @@ python -m miopds_common labels2collection \
 | 4 | Collection の LID | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
 | 5 | 出力ファイルの名前（拡張子なし） | `data_calibrated_efd` |
 
-1つ目の引数に Collection のディレクトリを指定すると、すべてのフェーズと年のディレクトリから観測ラベルを集めます。
+1つ目の引数に Collection のディレクトリを指定すると、すべてのフェーズ、データの種類、月のディレクトリから観測ラベルを集めます。
 前に作った Collection のラベルも同じディレクトリにありますが、インベントリには入りません。
 出力は、`~/pds4/bc_mmo_pwi/data_calibrated_efd/` の `data_calibrated_efd.lblx`（ラベル）と `data_calibrated_efd.csv`（インベントリ）です。
 CDF ファイルが見つからない観測ラベルは、警告を表示してインベントリから外します。
@@ -339,16 +323,15 @@ CDF ファイルが見つからない観測ラベルは、警告を表示して�
 `create_psa_collection_jinja.sh` に Collection の名前を渡すと、Collection のラベルとインベントリを作り、Collection のラベルを検証します。
 
 ```bash
-./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
-Collection のディレクトリは、`$ARCHIVE_ROOT/bc_mmo_pwi/data_calibrated_efd`（この例では `~/pds4/bc_mmo_pwi/data_calibrated_efd`）になります。
+Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡します。
+コマンドの前の `COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd` は、この1回の実行にだけ環境変数を渡す書き方です。
+引数の Collection の名前は、Collection の LID と出力ファイルの名前に使います。
+`COLLECTION_DIR` を指定しないときは、`$ARCHIVE_ROOT/$BUNDLE_NAME/data_calibrated_efd` を使います（`ARCHIVE_ROOT` の既定値は実行した場所です）。
 Bundle の名前は環境変数 `BUNDLE_NAME` で変えられます（既定は `bc_mmo_pwi`）。
 検証のレポートは、`pds_chk_log/` に日時を付けて保存します。
-
-macOS では、このスクリプトは `find: -printf: unknown primary or operator` で止まります（Issue #7）。
-macOS では、上の Python のコマンドを使ってください。
-Linux の `find` にはこの機能があるので止まらないはずですが、まだ確かめていません。
 
 ### C. Bundle まで作る
 
@@ -397,7 +380,7 @@ shell スクリプトを使ったときは、C の `create_psa_bundle_jinja.sh` 
 ```bash
 python -m miopds_common validate ~/pds4/bc_mmo_pwi \
   --report pds_chk_log/bundle_screen.log \
-  --validate-bin ~/local/pds/validate-4.2.0/bin/validate \
+  --validate-bin ~/local/pds/validate/bin/validate \
   --rule pds4.bundle \
   --label-extension lblx
 ```
@@ -412,7 +395,7 @@ python -m miopds_common validate ~/pds4/bc_mmo_pwi \
 cron で定期的に実行することを想定しています。
 使い方は [examples/README_ja.md](examples/README_ja.md) を見てください。
 
-ただし、今のスクリプトは Collection の下の `science/` を探すので、この構成では最初の段階で止まります（Issue #7）。
+親スクリプトも、上の「shell スクリプトを使う準備」の `MISSION_TIMELINE` を指定したときだけ、期間表から観測ラベルのミッションフェーズを決めます。
 
 ## 文書
 

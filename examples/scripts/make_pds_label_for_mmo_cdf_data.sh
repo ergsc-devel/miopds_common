@@ -11,6 +11,10 @@
 #   TEMPLATE_NAME に "" を渡すと mmo_cdf_label_template_multi_dataset.xml.j2 を使う。
 #   Options after OUTPUT_DIR go to miopds-label and override the defaults below.
 #   OUTPUT_DIR より後のオプションは miopds-label に渡され、下の既定値より優先される。
+#   Set MISSION_TIMELINE to a mission_timeline.json to take the mission phase
+#   from it; without it, the defaults in mission.json are used.
+#   MISSION_TIMELINE に mission_timeline.json を指定すると、ミッションフェーズを
+#   そこから決める。指定しなければ mission.json の既定値を使う。
 #
 set -euo pipefail
 
@@ -25,6 +29,13 @@ OUTPUT_DIR="${4:?$USAGE}"
 # Config files / 設定ファイル
 MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../config/mission.json}"
 DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../config/dataset_pwi_efd.json}"
+
+# Timeline (optional) / 期間表（任意）
+MISSION_TIMELINE="${MISSION_TIMELINE:-}"
+TIMELINE_ARGS=()
+if [[ -n "$MISSION_TIMELINE" ]]; then
+  TIMELINE_ARGS=(--timeline "$MISSION_TIMELINE")
+fi
 
 # Python that has miopds_common installed. It differs between servers
 # (python3 or python, venv path): set PYTHON for each server (../README.md).
@@ -47,5 +58,5 @@ PYTHON="${PYTHON:-python3}"
   "$OUTPUT_DIR" \
   --mission-config "$MISSION_CONFIG" \
   --dataset-config "$DATASET_CONFIG" \
-  --timeline "$TIMELINE" \
+  ${TIMELINE_ARGS[@]+"${TIMELINE_ARGS[@]}"} \
   "${@:5}"

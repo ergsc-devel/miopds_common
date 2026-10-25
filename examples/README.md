@@ -30,6 +30,7 @@ examples/
 | File | Purpose |
 |---|---|
 | `scripts/make_pds_label_for_mmo_cdf_data.sh` | Makes one observational label (`.lblx`) from one CDF file |
+| `scripts/make_all_pds_label_for_collection.sh` | Makes the observational labels from all the CDF files of one Collection |
 | `scripts/create_psa_collection_jinja.sh` | Makes the label and inventory of a data Collection, and validates them |
 | `scripts/create_psa_document_jinja.sh` | Makes the Document label and the Document Collection, and validates them |
 | `scripts/create_psa_bundle_jinja.sh` | Makes the Bundle label, and validates the whole Bundle |
@@ -123,14 +124,31 @@ downloaded to `~/Downloads/`.
    unzip ~/Downloads/validate-4.2.0-bin.zip -d ~/local/pds
    ```
 
-4. Check that it starts.
+4. Make a link from the name without a version number, `~/local/pds/validate`,
+   to the extracted directory. `ln -s` makes another name (a symbolic link)
+   for a file or directory. The scripts find PDS Validate through this link.
 
    ```bash
-   ~/local/pds/validate-4.2.0/bin/validate --help
+   ln -s validate-4.2.0 ~/local/pds/validate
    ```
 
-If you extracted it somewhere else, give that location in the environment
-variable `VALIDATE_BIN`. For the Java version needed, see the release notes of
+5. Check that it starts.
+
+   ```bash
+   ~/local/pds/validate/bin/validate --help
+   ```
+
+To move to a newer version of PDS Validate, extract the new version in the
+same way and point the link to it (`-f` replaces an existing link; `-n`
+replaces the link itself instead of going into the directory it points to).
+The scripts and the cron settings need no change.
+
+```bash
+ln -sfn validate-4.3.0 ~/local/pds/validate
+```
+
+(`validate-4.3.0` is an example.) If you put PDS Validate somewhere else, give
+that location in the environment variable `VALIDATE_BIN`. For the Java version needed, see the release notes of
 the package.
 
 ### XML Catalog
@@ -139,22 +157,6 @@ Prepare the XML Catalog (`pds4-validate-catalog.xml`) that resolves the PSA
 and BepiColombo dictionaries, and give its absolute path in the environment
 variable `VALIDATE_CATALOG`; this is recommended. If the file is not found,
 the scripts print a warning and continue the validation without the catalog.
-
-### Settings the current scripts need
-
-With the layout of the quick start, the current scripts do not work unless you
-set the following environment variables. This is a bug, to be fixed in
-[Issue #7](https://github.com/ergsc-devel/miopds_common/issues/7).
-
-| Environment variable | Value (example) | Used by | Without it |
-|---|---|---|---|
-| `TIMELINE` | `~/pds_config/mission_timeline.json` | Observational labels | Stops with `TIMELINE: unbound variable` |
-| `MISSION_TIMELINE_FILE` | `~/pds_config/mission_timeline.json` | Collection | Stops, because `config/mission_timeline.json` does not exist |
-| `ARCHIVE_ROOT` | `~/pds4` | Collection | Its default is a server-specific path, so the Collection directory is not found and the script stops |
-| `VALIDATE_BIN` | `~/local/pds/validate-4.2.0/bin/validate` | Collection, Bundle | Its default is `~/local/pds/validate/bin/validate`, so the script stops at the validation |
-
-For how to make the timeline (`mission_timeline.json`), see "Make the timeline"
-in [../README.md](../README.md).
 
 ## Rules common to the scripts
 
@@ -175,7 +177,7 @@ All the scripts use these environment variables:
 |---|---|---|
 | `PYTHON` | Python that has miopds_common installed | `python3` |
 | `VALIDATE_ENABLED` | `0` skips the validation | `1` |
-| `VALIDATE_BIN` | PDS Validate executable | Document: `$HOME/local/pds/validate-4.2.0/bin/validate`. Collection and Bundle: `$HOME/local/pds/validate/bin/validate` |
+| `VALIDATE_BIN` | PDS Validate executable | `$HOME/local/pds/validate/bin/validate` |
 | `VALIDATE_CATALOG` | Path of the XML Catalog (empty: no catalog) | `pds4-validate-catalog.xml` |
 | `REPORT_DIR` | Directory for the validation reports | `./pds_chk_log` |
 | `REPORT_TIMESTAMP` | Date and time in the report file names | The date and time of the run |
@@ -191,7 +193,8 @@ VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
 The Bundle label is made from the Collection labels, so run the scripts in
 this order:
 
-1. Observational labels (`make_pds_label_for_mmo_cdf_data.sh`)
+1. Observational labels (`make_pds_label_for_mmo_cdf_data.sh` for one CDF
+   file, `make_all_pds_label_for_collection.sh` for all of a Collection)
 2. Data Collection (`create_psa_collection_jinja.sh`)
 3. Document (`create_psa_document_jinja.sh`; only when the Bundle includes
    Documents)
@@ -218,27 +221,65 @@ validate.
 
 | Environment variable | Meaning | Default |
 |---|---|---|
-| `TIMELINE` | Timeline file (required for now; see "Settings the current scripts need" above) | None |
+| `MISSION_TIMELINE` | Timeline file (optional; when set, the mission phase is taken from the timeline) | None |
 | `MISSION_CONFIG` | Mission config file | `config/mission.json` |
 | `DATASET_CONFIG` | Dataset config file (the instrument and author config files are read from the paths written in it) | `config/dataset_pwi_efd.json` |
 
 The output is `OUTPUT_DIR/CDF file name.lblx` (the CDF file name with `.cdf`
-changed to `.lblx`). The mission phase is that of the period in the timeline
-that contains the observation start time. `--mission-phase-name` and
-`--mission-phase-id` given as options take priority over the timeline. To see
-the options, run `python -m miopds_common cdf2pdslabel --help`.
+changed to `.lblx`). When `MISSION_TIMELINE` is set, the mission phase is that
+of the period in the timeline that contains the observation start time; when
+it is not set, the default in `mission.json` is used. `--mission-phase-name`
+and `--mission-phase-id` given as options take priority over both. To see
+the options, run `python -m miopds_common cdf2pdslabel --help`. For how to
+make the timeline (`mission_timeline.json`), see "Make the timeline" in
+[../README.md](../README.md).
 
 An example:
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231
+  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 The sample `dataset_pwi_efd.json` is rejected until its `REPLACE_` values are
 replaced.
+
+### All observational labels of a Collection: `make_all_pds_label_for_collection.sh`
+
+Makes the observational labels from all the CDF files of one Collection. Every
+label is made again. It does not change the Collection label and inventory
+(use `create_psa_collection_jinja.sh` for them). This script does not
+validate.
+
+```bash
+./pds/scripts/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
+```
+
+| Argument | Meaning |
+|---|---|
+| `COLLECTION_DIR` | Collection directory |
+| `OPTIONS` | The arguments from the second on are passed, for every CDF file, through `make_pds_label_for_mmo_cdf_data.sh` to `cdf2pdslabel` as options |
+
+| Environment variable | Meaning | Default |
+|---|---|---|
+| `TEMPLATES_DIR` | Template directory | `templates/` |
+
+`MISSION_CONFIG`, `DATASET_CONFIG` and `MISSION_TIMELINE` are passed on to the
+observational label script as they are (see the observational label section
+above for their meaning).
+
+The CDF files may be in any directory under `COLLECTION_DIR` (e.g.
+`phase/data_type/month/`). Each label is written in the same directory as its CDF
+file. At the end, labels without their CDF files are reported as warnings
+(the labels are not removed; the Collection label itself is not counted).
+
+An example:
+
+```bash
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
+```
 
 ### Collection: `create_psa_collection_jinja.sh`
 
@@ -250,20 +291,29 @@ Collection label.
 ```
 
 `COLLECTION_NAME` is the name of the Collection (default
-`data_calibrated_efd`). Only letters, digits, `_` and `-` can be used.
+`data_calibrated_efd`). Only letters, digits, `_` and `-` can be used. The
+Collection directory is given in the environment variable `COLLECTION_DIR`.
+An example:
+
+```bash
+COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+```
+
+Without `COLLECTION_DIR`, the script uses
+`$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME`.
 
 | Environment variable | Meaning | Default |
 |---|---|---|
-| `ARCHIVE_ROOT` | Location of the bundle directory (required for now) | A server-specific path |
+| `ARCHIVE_ROOT` | Location of the bundle directory (used when `COLLECTION_DIR` is not set) | `.` (the current directory) |
 | `BUNDLE_NAME` | Bundle name | `bc_mmo_pwi` |
-| `COLLECTION_DIR` | Collection directory | `$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` |
+| `COLLECTION_DIR` | Collection directory (the parent script passes it) | `$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` |
 | `LABEL_DIR` | Directory searched for observational labels (subdirectories included) | `$COLLECTION_DIR` |
 | `COLLECTION_LID` | Collection LID | `urn:jaxa:darts:$BUNDLE_NAME:$COLLECTION_NAME` |
 | `OUTPUT_BASE` | Output file name without extension | `$COLLECTION_NAME` |
 | `TEMPLATE_FILE` | Template | `templates/collection_template.xml.j2` |
 | `MISSION_CONFIG` | Mission config file | `config/mission.json` |
 | `DATASET_CONFIG` | Dataset config file | `config/dataset_pwi_efd.json` |
-| `MISSION_TIMELINE_FILE` | Timeline file (required for now; the script only checks that it is valid JSON and does not use it for the Collection) | `config/mission_timeline.json` |
+| `MISSION_TIMELINE` | Timeline file (optional; only when it is set, the script checks that it is valid JSON; it is not used for the Collection) | None |
 | `PUBLICATION_YEAR` | Publication year | `2027` |
 | `VERSION_ID` | Collection version | `1.0` |
 | `VALIDATE_REPORT` | File for what the validation printed | `$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_validate_report.txt` |
@@ -279,10 +329,6 @@ does not enter the inventory.
 
 The title and description of the Collection are read from `collection` in
 `DATASET_CONFIG`, and the Information Model version from `MISSION_CONFIG`.
-
-On macOS, this script stops with `find: -printf: unknown primary or operator`
-(Issue #7). On macOS, use the Python command of B in the quick start of
-[../README.md](../README.md).
 
 ### Document: `create_psa_document_jinja.sh`
 
@@ -387,24 +433,20 @@ carried over to the labels, the Collection and the Bundle.
 | `all` | Rebuild all products (`--all` also works) |
 | `BUNDLE_DIR` | Bundle directory (default `bc_mmo_pwi`) |
 
-The current script assumes this layout:
+The script assumes this layout:
 
 ```text
-BUNDLE_DIR/data_calibrated_efd/science/**/*.cdf   data (labels are written in the same directory as the CDF)
-BUNDLE_DIR/document/*.pdf                         documents (the Document step is skipped if absent)
+BUNDLE_DIR/data_calibrated_efd/**/*.cdf   data (any directory under the Collection; labels are written in the same directory as the CDF)
+BUNDLE_DIR/document/*.pdf                 documents (the Document step is skipped if absent)
 ```
-
-So with the layout of the quick start (directories per phase and per year
-under the Collection), it stops with `ERROR: directory not found: .../science`
-(Issue #7).
 
 A product is rebuilt when its output does not exist, or when one of these
 inputs is newer than the output:
 
 | Output | Inputs |
 |---|---|
-| Observational label (per CDF) | The CDF file, the dataset config file |
-| Collection | Files and directories under `science/` (including added and removed ones) |
+| Observational label (per CDF) | The CDF file, the dataset config file, the timeline (when `MISSION_TIMELINE` is set) |
+| Collection | Files and directories under the Collection directory (including added and removed ones) |
 | Document and Document Collection | The PDF (`PDF_FILE`) |
 | Bundle | The label of each Collection |
 | Every product | `templates/`, `config/`, `scripts/` and the Python code of miopds_common |
@@ -423,6 +465,7 @@ Edit these two places in the script for the instrument:
 | Environment variable | Meaning | Default |
 |---|---|---|
 | `BUNDLE_NAME` | Bundle name (used in the lock name and the Bundle label name) | The last part of `BUNDLE_DIR` |
+| `MISSION_TIMELINE` | Timeline file (optional; when set, the mission phase of the observational labels is taken from it, and it is also an input of the observational labels) | None |
 | `PDF_FILE` | Name of the Document PDF | `bc_mmo_pwi_data_user_guide.pdf` |
 | `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection label name | `collection_bc_mmo_pwi_document.lblx` |
