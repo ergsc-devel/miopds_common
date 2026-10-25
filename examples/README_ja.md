@@ -8,7 +8,7 @@ shell スクリプト、Jinja2 テンプレート、設定ファイル（JSON）
 
 この文書は、各スクリプトの引数、環境変数、出力を調べるための説明書です。
 最初から順に動かす手順は、[../README_ja.md](../README_ja.md) の「クイックスタート」にあります。
-ディレクトリ構成も、クイックスタートの構成（Bundle をリポジトリの外の `~/pds4/bc_mmo_pwi/` に置く）を前提にします。
+ディレクトリ構成も、クイックスタートの構成（Bundle をリポジトリの外の `~/pds/bc_mmo_pwi/` に置く）を前提にします。
 コマンドの例は、機器のリポジトリの一番上で実行するものとします。
 
 見本は、BepiColombo Mio PWI 向けの値（`bc_mmo_pwi` など）を既定値に持っています。
@@ -62,14 +62,14 @@ Python のコマンドの名前（`python3` か `python` か）と venv の場�
 | 実行のしかた | 指定の方法 |
 |---|---|
 | 手で実行する | venv を有効にする（`source ~/mio_pds_validate/bin/activate`）か、`export PYTHON=~/mio_pds_validate/bin/python` を実行する |
-| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi` のように、コマンドの前に書く |
+| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` のように、コマンドの前に書く |
 | cron で実行する | crontab の行に `PYTHON=$HOME/mio_pds_validate/bin/python` を書く。cron は venv を有効にせず、PATH も最小限なので、この指定が必ず必要 |
 | 機器のリポジトリで固定する | コピーした shell の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
 
 crontab の行の例を示します（パスは例です。サーバーに合わせて書き換えてください）。
 
 ```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds4/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
 指定した Python に miopds_common が入っているかは、次のコマンドで確かめられます。
@@ -163,7 +163,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 検証を省く例を示します。
 
 ```bash
-VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ## 各スクリプト
@@ -209,9 +209,9 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 見本の `dataset_pwi_efd.json` は、`REPLACE_` の値を書き換えるまでエラーになります。
@@ -244,7 +244,7 @@ CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあ�
 例を示します。
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 ### Collection：`create_psa_collection_jinja.sh`
@@ -260,7 +260,7 @@ Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡しま
 例を示します。
 
 ```bash
-COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 `COLLECTION_DIR` を指定しないときは、`$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` を使います。
@@ -331,7 +331,7 @@ Document Collection の題名、説明、機器の名前は `INSTRUMENT_CONFIG` 
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 ### Bundle：`create_psa_bundle_jinja.sh`
@@ -359,7 +359,7 @@ Bundle のディレクトリの下にある Collection のラベルを集めて 
 | `VALIDATE_REPORT` | PDS Validate 自身のレポート（`--report-file`）の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
 | `VALIDATE_LOG` | 検証で画面に出た内容の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
 
-出力は `BUNDLE_DIR/OUTPUT_FILE`（例：`~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx`）です。
+出力は `BUNDLE_DIR/OUTPUT_FILE`（例：`~/pds/bc_mmo_pwi/bc_mmo_pwi.lblx`）です。
 Bundle のメンバーになるのは、`BUNDLE_DIR` の下にある Collection のラベルのうち、拡張子が `.lblx` のものだけです。
 Bundle の題名と説明は `INSTRUMENT_CONFIG` の `bundle` から、Information Model の版は `MISSION_CONFIG` から読みます。
 Bundle のラベルには、著者リストを書きません。
@@ -368,7 +368,7 @@ Bundle のラベルには、著者リストを書きません。
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ### まとめて実行・差分更新：`cron_mk_cdf_to_pds.sh`

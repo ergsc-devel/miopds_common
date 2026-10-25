@@ -114,7 +114,7 @@ its installation, see "Installing PDS Validate 4.2.0" in
 Run the commands at the top of the instrument repository. The instrument
 repository holds a copy of `examples/` of miopds_common, named `pds/`. The data
 (the bundle directory) is kept outside the repository. The examples below put
-the bundle at `~/pds4/bc_mmo_pwi/` and use the sample values for PWI-EFD
+the bundle at `~/pds/bc_mmo_pwi/` and use the sample values for PWI-EFD
 (bundle `bc_mmo_pwi`, Collection `data_calibrated_efd`). For other
 instruments, replace the names and locations with those of the instrument.
 
@@ -125,7 +125,7 @@ instrument_repo/                          # instrument repository (example)
     ├── templates/
     └── config/
 
-~/pds4/
+~/pds/
 └── bc_mmo_pwi/                           # bundle directory
     └── data_calibrated_efd/              # Collection directory
         ├── cruise/                       # data of Cruise
@@ -163,7 +163,36 @@ the same directory as the CDF files.
    `authors_*.json` for the instrument. The meaning of each item is in
    [examples/config/README.md](examples/config/README.md).
 
-3. Activate the venv.
+3. Copy the CDF files into the monthly directory of the Collection. The
+   observational labels are written in the same directory as the CDF files, so
+   the CDF files must be in a monthly directory below `~/pds/`. In this example,
+   the CDF files are made in `~/cdf/pwi/efd/l2/example/2027/01/`.
+
+   First, make the target directory (`mkdir -p` also makes the parent
+   directories, and does nothing if the directory already exists).
+
+   ```bash
+   mkdir -p ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+   ```
+
+   Then, copy the CDF files of that month.
+
+   ```bash
+   cp -p ~/cdf/pwi/efd/l2/example/2027/01/*.cdf ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/
+   ```
+
+   `*.cdf` stands for all the files in that directory whose names end in
+   `.cdf`. The `-p` option of `cp` keeps the modification time of the files.
+   Use `-p`, because `creation_date_time` in the observational label, and the
+   publication year when it is not given, come from the modification time of
+   the CDF file.
+
+   Choose the phase directory (`mercury_science_orbit` in this example) by the
+   time the CDF data were observed. The mission phase written in the label is
+   decided by the timeline or the default in `mission.json`, not by the
+   directory (see "Where the files go" in [docs/usage.md](docs/usage.md)).
+
+4. Activate the venv.
 
    ```bash
    source ~/mio_pds_validate/bin/activate
@@ -248,9 +277,9 @@ Make one observational label from one CDF file.
 
 ```bash
 python -m miopds_common cdf2pdslabel \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
   --mission-config pds/config/mission.json \
   --dataset-config pds/config/dataset_pwi_efd.json
 ```
@@ -264,7 +293,7 @@ name must contain an 8-digit date between `_` characters, such as
 To process all the CDF files of the Collection, repeat the command with `for`.
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
+for cdf in ~/pds/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
     pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
@@ -292,17 +321,17 @@ CDF file.
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | Order | Argument | Value in this example |
 |---|---|---|
-| 1 | CDF file | `~/pds4/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
+| 1 | CDF file | `~/pds/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
 | 2 | Template directory | `pds/templates` |
 | 3 | Template name (`""` means `mmo_cdf_label_template_multi_dataset.xml.j2`) | `""` |
-| 4 | Output directory | `~/pds4/.../20270101_20270131` |
+| 4 | Output directory | `~/pds/.../20270101_20270131` |
 
 Arguments after the fourth are passed to `cdf2pdslabel` as options (e.g.
 `--mission-phase-name Cruise --mission-phase-id cruise`). The script reads the
@@ -316,7 +345,7 @@ To process all the CDF files of the Collection, give the Collection directory
 to `make_all_pds_label_for_collection.sh`.
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 This script finds the CDF files in any directory under the Collection, and
@@ -333,8 +362,8 @@ of the data Collection.
 
 ```bash
 python -m miopds_common labels2collection \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd \
   pds/templates/collection_template.xml.j2 \
   urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd \
   data_calibrated_efd \
@@ -345,8 +374,8 @@ python -m miopds_common labels2collection \
 
 | Order | Argument | Value in this example |
 |---|---|---|
-| 1 | Directory searched for observational labels (subdirectories included) | `~/pds4/bc_mmo_pwi/data_calibrated_efd` |
-| 2 | Output directory | `~/pds4/bc_mmo_pwi/data_calibrated_efd` |
+| 1 | Directory searched for observational labels (subdirectories included) | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
+| 2 | Output directory | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
 | 3 | Template | `pds/templates/collection_template.xml.j2` |
 | 4 | Collection LID | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
 | 5 | Output file name without extension | `data_calibrated_efd` |
@@ -356,7 +385,7 @@ observational labels from the directories of every phase, data type and
 month. The
 Collection label made before is in the same directory, but it does not enter
 the inventory. The outputs are `data_calibrated_efd.lblx` (label) and
-`data_calibrated_efd.csv` (inventory) in `~/pds4/bc_mmo_pwi/data_calibrated_efd/`.
+`data_calibrated_efd.csv` (inventory) in `~/pds/bc_mmo_pwi/data_calibrated_efd/`.
 An observational label whose CDF file is missing is reported as a warning and
 left out of the inventory.
 
@@ -366,11 +395,11 @@ Give the Collection name to `create_psa_collection_jinja.sh`. It makes the
 label and inventory of the Collection, and validates the Collection label.
 
 ```bash
-COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 The Collection directory is given in the environment variable
-`COLLECTION_DIR`. `COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd`
+`COLLECTION_DIR`. `COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd`
 before the command passes the environment variable to this run only. The
 Collection name in the argument is used in the Collection LID and the output
 file name. Without `COLLECTION_DIR`, the script uses
@@ -387,7 +416,7 @@ bundle directory and make the Bundle label.
 #### With the Python command
 
 ```bash
-python -m miopds_common collections2bundle ~/pds4/bc_mmo_pwi \
+python -m miopds_common collections2bundle ~/pds/bc_mmo_pwi \
   --template pds/templates/bundle_template.xml.j2 \
   --bundle-lid urn:jaxa:darts:bc_mmo_pwi \
   --mission-config pds/config/mission.json \
@@ -395,7 +424,7 @@ python -m miopds_common collections2bundle ~/pds4/bc_mmo_pwi \
   --publication-year 2027
 ```
 
-The output is `~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx`. To include Documents (PDF files) in
+The output is `~/pds/bc_mmo_pwi/bc_mmo_pwi.lblx`. To include Documents (PDF files) in
 the Bundle, make the Document labels and the Document Collection with
 `pdf2document` before making the Bundle. See "pdf2document: Document and
 Document Collection" in [docs/usage.md](docs/usage.md).
@@ -403,12 +432,12 @@ Document Collection" in [docs/usage.md](docs/usage.md).
 #### With the shell scripts
 
 To include Documents in the Bundle, run `create_psa_document_jinja.sh` before
-making the Bundle. From the PDF in `~/pds4/bc_mmo_pwi/document/` (by default
+making the Bundle. From the PDF in `~/pds/bc_mmo_pwi/document/` (by default
 `bc_mmo_pwi_data_user_guide.pdf`), it makes the Document label and the
 Document Collection, and validates them.
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 Change the PDF name and the Document title with environment variables (see
@@ -418,7 +447,7 @@ Then give the bundle directory to `create_psa_bundle_jinja.sh` to make the
 Bundle label.
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 After making the Bundle label, this script validates the whole Bundle with PDS
@@ -433,7 +462,7 @@ scripts, `create_psa_bundle_jinja.sh` in C has already done this validation,
 so this step is not needed.
 
 ```bash
-python -m miopds_common validate ~/pds4/bc_mmo_pwi \
+python -m miopds_common validate ~/pds/bc_mmo_pwi \
   --report pds_chk_log/bundle_screen.log \
   --validate-bin ~/local/pds/validate/bin/validate \
   --rule pds4.bundle \

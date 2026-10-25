@@ -106,7 +106,7 @@ PDS Validate（検証に使う Java のツール）は、検証するときだ�
 コマンドは、機器のリポジトリの一番上で実行します。
 機器のリポジトリには、miopds_common の `examples/` をコピーし、`pds/` という名前で置きます。
 データ（Bundle のディレクトリ）は、リポジトリの外に置きます。
-以下の例では、Bundle を `~/pds4/bc_mmo_pwi/` に置き、PWI-EFD の見本の値（Bundle が `bc_mmo_pwi`、Collection が `data_calibrated_efd`）を使います。
+以下の例では、Bundle を `~/pds/bc_mmo_pwi/` に置き、PWI-EFD の見本の値（Bundle が `bc_mmo_pwi`、Collection が `data_calibrated_efd`）を使います。
 ほかの機器では、名前と場所を読み替えてください。
 
 ```text
@@ -116,7 +116,7 @@ instrument_repo/                          # 機器のリポジトリ（例）
     ├── templates/
     └── config/
 
-~/pds4/
+~/pds/
 └── bc_mmo_pwi/                           # Bundle のディレクトリ
     └── data_calibrated_efd/              # Collection のディレクトリ
         ├── cruise/                       # Cruise のデータ
@@ -149,7 +149,30 @@ instrument_repo/                          # 機器のリポジトリ（例）
    ほかの機器では、`instrument_*.json`、`dataset_*.json`、`authors_*.json` も機器に合わせて作ります。
    各項目の意味は [examples/config/README_ja.md](examples/config/README_ja.md) にあります。
 
-3. venv を有効にします。
+3. CDF を、Collection の月のディレクトリにコピーします。
+   観測ラベルは CDF と同じディレクトリに作るので、CDF は `~/pds/` の下の月のディレクトリに置く必要があります。
+   この例では、CDF は `~/cdf/pwi/efd/l2/example/2027/01/` に作られているものとします。
+
+   まず、コピー先のディレクトリを作ります（`mkdir -p` は、途中のディレクトリもまとめて作り、すでにあれば何もしません）。
+
+   ```bash
+   mkdir -p ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+   ```
+
+   次に、その月の CDF をコピーします。
+
+   ```bash
+   cp -p ~/cdf/pwi/efd/l2/example/2027/01/*.cdf ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/
+   ```
+
+   `*.cdf` は、そのディレクトリにある、名前が `.cdf` で終わるファイルすべてを表します。
+   `cp` の `-p` は、ファイルの更新日時を元のまま残すオプションです。
+   観測ラベルの `creation_date_time` と、指定しなかったときの出版年は、CDF の更新日時から決まるので、`-p` を付けてください。
+
+   フェーズのディレクトリ（この例では `mercury_science_orbit`）は、CDF を観測した時期に合わせて選びます。
+   ラベルに入るミッションフェーズは、置いたディレクトリからではなく、期間表か `mission.json` の既定値から決まります（[docs/usage_ja.md](docs/usage_ja.md) の「ファイルの置き場所」）。
+
+4. venv を有効にします。
 
    ```bash
    source ~/mio_pds_validate/bin/activate
@@ -223,9 +246,9 @@ CDF ファイル1つから、観測ラベルを1つ作ります。
 
 ```bash
 python -m miopds_common cdf2pdslabel \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
   --mission-config pds/config/mission.json \
   --dataset-config pds/config/dataset_pwi_efd.json
 ```
@@ -237,7 +260,7 @@ CDF のファイル名には、`_20270101_` のように `_` で挟んだ8桁の
 Collection の CDF ファイルをすべて処理するときは、`for` で1つずつ繰り返します。
 
 ```bash
-for cdf in ~/pds4/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
+for cdf in ~/pds/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
     pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
@@ -261,17 +284,17 @@ done
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | 順番 | 引数 | この例の値 |
 |---|---|---|
-| 1 | CDF ファイル | `~/pds4/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
+| 1 | CDF ファイル | `~/pds/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
 | 2 | テンプレートのディレクトリ | `pds/templates` |
 | 3 | テンプレートの名前（`""` にすると `mmo_cdf_label_template_multi_dataset.xml.j2`） | `""` |
-| 4 | 出力先のディレクトリ | `~/pds4/.../20270101_20270131` |
+| 4 | 出力先のディレクトリ | `~/pds/.../20270101_20270131` |
 
 5つ目以降の引数は、`cdf2pdslabel` のオプションとしてそのまま渡ります（例：`--mission-phase-name Cruise --mission-phase-id cruise`）。
 設定ファイルは `pds/config/mission.json` と `pds/config/dataset_pwi_efd.json` を読みます（環境変数 `MISSION_CONFIG` と `DATASET_CONFIG` で変えられます）。
@@ -281,7 +304,7 @@ done
 Collection の CDF ファイルをすべて処理するときは、`make_all_pds_label_for_collection.sh` に Collection のディレクトリを渡します。
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 このスクリプトは、Collection の下のどのディレクトリにある CDF も探し、すべての観測ラベルを作り直します（Collection のラベルとインベントリは変えません）。
@@ -295,8 +318,8 @@ A で作った観測ラベルを集めて、データの Collection のラベル
 
 ```bash
 python -m miopds_common labels2collection \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd \
   pds/templates/collection_template.xml.j2 \
   urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd \
   data_calibrated_efd \
@@ -307,15 +330,15 @@ python -m miopds_common labels2collection \
 
 | 順番 | 引数 | この例の値 |
 |---|---|---|
-| 1 | 観測ラベルを探すディレクトリ（サブディレクトリの中も探す） | `~/pds4/bc_mmo_pwi/data_calibrated_efd` |
-| 2 | 出力先のディレクトリ | `~/pds4/bc_mmo_pwi/data_calibrated_efd` |
+| 1 | 観測ラベルを探すディレクトリ（サブディレクトリの中も探す） | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
+| 2 | 出力先のディレクトリ | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
 | 3 | テンプレート | `pds/templates/collection_template.xml.j2` |
 | 4 | Collection の LID | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
 | 5 | 出力ファイルの名前（拡張子なし） | `data_calibrated_efd` |
 
 1つ目の引数に Collection のディレクトリを指定すると、すべてのフェーズ、データの種類、月のディレクトリから観測ラベルを集めます。
 前に作った Collection のラベルも同じディレクトリにありますが、インベントリには入りません。
-出力は、`~/pds4/bc_mmo_pwi/data_calibrated_efd/` の `data_calibrated_efd.lblx`（ラベル）と `data_calibrated_efd.csv`（インベントリ）です。
+出力は、`~/pds/bc_mmo_pwi/data_calibrated_efd/` の `data_calibrated_efd.lblx`（ラベル）と `data_calibrated_efd.csv`（インベントリ）です。
 CDF ファイルが見つからない観測ラベルは、警告を表示してインベントリから外します。
 
 #### shell スクリプトで実行する
@@ -323,11 +346,11 @@ CDF ファイルが見つからない観測ラベルは、警告を表示して�
 `create_psa_collection_jinja.sh` に Collection の名前を渡すと、Collection のラベルとインベントリを作り、Collection のラベルを検証します。
 
 ```bash
-COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡します。
-コマンドの前の `COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd` は、この1回の実行にだけ環境変数を渡す書き方です。
+コマンドの前の `COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd` は、この1回の実行にだけ環境変数を渡す書き方です。
 引数の Collection の名前は、Collection の LID と出力ファイルの名前に使います。
 `COLLECTION_DIR` を指定しないときは、`$ARCHIVE_ROOT/$BUNDLE_NAME/data_calibrated_efd` を使います（`ARCHIVE_ROOT` の既定値は実行した場所です）。
 Bundle の名前は環境変数 `BUNDLE_NAME` で変えられます（既定は `bc_mmo_pwi`）。
@@ -340,7 +363,7 @@ B で Collection を作った後、Bundle のディレクトリの下にある C
 #### Python のコマンドで実行する
 
 ```bash
-python -m miopds_common collections2bundle ~/pds4/bc_mmo_pwi \
+python -m miopds_common collections2bundle ~/pds/bc_mmo_pwi \
   --template pds/templates/bundle_template.xml.j2 \
   --bundle-lid urn:jaxa:darts:bc_mmo_pwi \
   --mission-config pds/config/mission.json \
@@ -348,17 +371,17 @@ python -m miopds_common collections2bundle ~/pds4/bc_mmo_pwi \
   --publication-year 2027
 ```
 
-出力は `~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx` です。
+出力は `~/pds/bc_mmo_pwi/bc_mmo_pwi.lblx` です。
 Document（PDF の文書）を Bundle に入れるときは、Bundle を作る前に `pdf2document` で Document のラベルと Document Collection を作ります。
 手順は [docs/usage_ja.md](docs/usage_ja.md) の「pdf2document：Document と Document Collection」にあります。
 
 #### shell スクリプトで実行する
 
 Document を Bundle に入れるときは、Bundle を作る前に `create_psa_document_jinja.sh` を実行します。
-`~/pds4/bc_mmo_pwi/document/` にある PDF（既定は `bc_mmo_pwi_data_user_guide.pdf`）から、Document のラベルと Document Collection を作り、検証します。
+`~/pds/bc_mmo_pwi/document/` にある PDF（既定は `bc_mmo_pwi_data_user_guide.pdf`）から、Document のラベルと Document Collection を作り、検証します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 PDF の名前や Document の題名は、環境変数で変えます（[examples/README_ja.md](examples/README_ja.md) の「Document」）。
@@ -366,7 +389,7 @@ PDF の名前や Document の題名は、環境変数で変えます（[examples
 次に、`create_psa_bundle_jinja.sh` に Bundle のディレクトリを渡して、Bundle のラベルを作ります。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 このスクリプトは、Bundle のラベルを作ったあと、Bundle 全体を PDS Validate で検証します（D の検証も、このスクリプトが行います）。
@@ -378,7 +401,7 @@ PDS Validate で Bundle 全体を検証し、画面に出た内容をリポジ�
 shell スクリプトを使ったときは、C の `create_psa_bundle_jinja.sh` がこの検証を行うので、この手順はいりません。
 
 ```bash
-python -m miopds_common validate ~/pds4/bc_mmo_pwi \
+python -m miopds_common validate ~/pds/bc_mmo_pwi \
   --report pds_chk_log/bundle_screen.log \
   --validate-bin ~/local/pds/validate/bin/validate \
   --rule pds4.bundle \

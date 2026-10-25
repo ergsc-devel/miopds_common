@@ -11,7 +11,7 @@ This document is a reference for the arguments, environment variables and
 outputs of each script. For the steps to run everything from the beginning,
 see "Quick start" in [../README.md](../README.md). This document also assumes
 the directory layout of the quick start (the bundle is outside the repository,
-at `~/pds4/bc_mmo_pwi/`). The command examples are run at the top of the
+at `~/pds/bc_mmo_pwi/`). The command examples are run at the top of the
 instrument repository.
 
 The samples have values for BepiColombo Mio PWI (such as `bc_mmo_pwi`) as
@@ -68,7 +68,7 @@ give the Python that has miopds_common installed in one of these ways.
 | How you run the scripts | How to give the Python |
 |---|---|
 | By hand | Activate the venv (`source ~/mio_pds_validate/bin/activate`), or run `export PYTHON=~/mio_pds_validate/bin/python` |
-| Only once | Write it before the command, as in `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi` |
+| Only once | Write it before the command, as in `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` |
 | By cron | Write `PYTHON=$HOME/mio_pds_validate/bin/python` in the crontab line. This is always needed: cron does not activate the venv, and its PATH is minimal |
 | Fixed in the instrument repository | In the copied scripts, replace `python3` in `PYTHON="${PYTHON:-python3}"` with the absolute path of the Python on that server |
 
@@ -76,7 +76,7 @@ An example of a crontab line (the paths are examples; change them for the
 server):
 
 ```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds4/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
 To check that the Python you gave has miopds_common installed, run:
@@ -185,7 +185,7 @@ All the scripts use these environment variables:
 An example that skips the validation:
 
 ```bash
-VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ## Scripts
@@ -238,9 +238,9 @@ An example:
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 The sample `dataset_pwi_efd.json` is rejected until its `REPLACE_` values are
@@ -278,7 +278,7 @@ file. At the end, labels without their CDF files are reported as warnings
 An example:
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds4/bc_mmo_pwi/data_calibrated_efd
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 ### Collection: `create_psa_collection_jinja.sh`
@@ -296,7 +296,7 @@ Collection directory is given in the environment variable `COLLECTION_DIR`.
 An example:
 
 ```bash
-COLLECTION_DIR=~/pds4/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 Without `COLLECTION_DIR`, the script uses
@@ -375,7 +375,7 @@ and the mission name and the Information Model version from `MISSION_CONFIG`.
 An example:
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 ### Bundle: `create_psa_bundle_jinja.sh`
@@ -404,7 +404,7 @@ label, and validates the whole Bundle.
 | `VALIDATE_REPORT` | File for PDS Validate's own report (`--report-file`) | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
 | `VALIDATE_LOG` | File for what the validation printed | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
 
-The output is `BUNDLE_DIR/OUTPUT_FILE` (e.g. `~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx`).
+The output is `BUNDLE_DIR/OUTPUT_FILE` (e.g. `~/pds/bc_mmo_pwi/bc_mmo_pwi.lblx`).
 Only the Collection labels with the extension `.lblx` under `BUNDLE_DIR`
 become members of the Bundle. The title and description of the Bundle are read
 from `bundle` in `INSTRUMENT_CONFIG`, and the Information Model version from
@@ -414,7 +414,7 @@ the whole Bundle with `--rule pds4.bundle`.
 An example:
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ### Run everything and rebuild only what changed: `cron_mk_cdf_to_pds.sh`
