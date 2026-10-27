@@ -37,7 +37,7 @@ ARCHIVE_ROOT="${ARCHIVE_ROOT%/}"
 
 # Derive the collection directory automatically. COLLECTION_DIR remains an
 # environment override for testing or a non-standard deployment.
-COLLECTION_DIR="${COLLECTION_DIR:-${ARCHIVE_ROOT}/${BUNDLE_NAME}/${COLLECTION_NAME}}"
+COLLECTION_DIR="${COLLECTION_DIR:-${ARCHIVE_ROOT}/${BUNDLE_NAME}}"
 COLLECTION_DIR="${COLLECTION_DIR%/}"
 
 # Labels are searched recursively below this directory, e.g.
