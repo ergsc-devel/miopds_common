@@ -8,7 +8,7 @@ shell スクリプト、Jinja2 テンプレート、設定ファイル（JSON）
 
 この文書は、各スクリプトの引数、環境変数、出力を調べるための説明書です。
 最初から順に動かす手順は、[../README_ja.md](../README_ja.md) の「クイックスタート」にあります。
-ディレクトリ構成も、クイックスタートの構成（Bundle をリポジトリの外の `~/pds4/bc_mmo_pwi/` に置く）を前提にします。
+ディレクトリ構成も、クイックスタートの構成（Bundle をリポジトリの外の `~/pds/bc_mmo_pwi/` に置く）を前提にします。
 コマンドの例は、機器のリポジトリの一番上で実行するものとします。
 
 見本は、BepiColombo Mio PWI 向けの値（`bc_mmo_pwi` など）を既定値に持っています。
@@ -26,6 +26,7 @@ examples/
 | ファイル | 用途 |
 |---|---|
 | `scripts/make_pds_label_for_mmo_cdf_data.sh` | CDF ファイル1つから観測ラベル（`.lblx`）を作る |
+| `scripts/make_all_pds_label_for_collection.sh` | 1つの Collection のすべての CDF ファイルから観測ラベルを作る |
 | `scripts/create_psa_collection_jinja.sh` | データの Collection のラベルとインベントリを作り、検証する |
 | `scripts/create_psa_document_jinja.sh` | Document のラベルと Document Collection を作り、検証する |
 | `scripts/create_psa_bundle_jinja.sh` | Bundle のラベルを作り、Bundle 全体を検証する |
@@ -61,14 +62,14 @@ Python のコマンドの名前（`python3` か `python` か）と venv の場�
 | 実行のしかた | 指定の方法 |
 |---|---|
 | 手で実行する | venv を有効にする（`source ~/mio_pds_validate/bin/activate`）か、`export PYTHON=~/mio_pds_validate/bin/python` を実行する |
-| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi` のように、コマンドの前に書く |
+| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` のように、コマンドの前に書く |
 | cron で実行する | crontab の行に `PYTHON=$HOME/mio_pds_validate/bin/python` を書く。cron は venv を有効にせず、PATH も最小限なので、この指定が必ず必要 |
 | 機器のリポジトリで固定する | コピーした shell の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
 
 crontab の行の例を示します（パスは例です。サーバーに合わせて書き換えてください）。
 
 ```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds4/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
 指定した Python に miopds_common が入っているかは、次のコマンドで確かめられます。
@@ -109,33 +110,35 @@ PDS Validate は、NASA PDS が配布している Java の検証ツールです�
    unzip ~/Downloads/validate-4.2.0-bin.zip -d ~/local/pds
    ```
 
-4. 起動できるかを確かめます。
+4. 版の番号のない名前 `~/local/pds/validate` から、展開したディレクトリへのリンクを作ります。
+   `ln -s` は、ファイルやディレクトリへの別名（シンボリックリンク）を作るコマンドです。
+   スクリプトは、このリンクを通して PDS Validate を探します。
 
    ```bash
-   ~/local/pds/validate-4.2.0/bin/validate --help
+   ln -s validate-4.2.0 ~/local/pds/validate
    ```
 
-ほかの場所に展開した場合は、その場所を環境変数 `VALIDATE_BIN` に指定してください。
+5. 起動できるかを確かめます。
+
+   ```bash
+   ~/local/pds/validate/bin/validate --help
+   ```
+
+PDS Validate の版を上げるときは、新しい版を同じように展開し、リンクを張り替えます（`-f` は既にあるリンクを置き換える指定、`-n` はリンク先のディレクトリの中ではなくリンクそのものを置き換える指定です）。
+スクリプトや cron の設定は書き換えなくて済みます。
+
+```bash
+ln -sfn validate-4.3.0 ~/local/pds/validate
+```
+
+（`validate-4.3.0` は例です。）
+ほかの場所に置いた場合は、その場所を環境変数 `VALIDATE_BIN` に指定してください。
 Java の必要な版は、配布物のリリースノートで確かめてください。
 
 ### XML Catalog
 
 PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalog.xml`）を用意し、その絶対パスを環境変数 `VALIDATE_CATALOG` に指定することをすすめます。
 ファイルが見つからないとき、スクリプトは警告を表示し、Catalog なしで検証を続けます。
-
-### 今のスクリプトに必要な設定
-
-今のスクリプトは、クイックスタートの構成では、次の環境変数を指定しないと動きません。
-これは不具合で、[Issue #7](https://github.com/ergsc-devel/miopds_common/issues/7) で直す予定です。
-
-| 環境変数 | 指定する値（例） | 使うスクリプト | 指定しないとどうなるか |
-|---|---|---|---|
-| `TIMELINE` | `~/pds_config/mission_timeline.json` | 観測ラベル | `TIMELINE: unbound variable` で止まる |
-| `MISSION_TIMELINE_FILE` | `~/pds_config/mission_timeline.json` | Collection | `config/mission_timeline.json` がないので止まる |
-| `ARCHIVE_ROOT` | `~/pds4` | Collection | 既定値がサーバー固有のパスなので、Collection のディレクトリが見つからず止まる |
-| `VALIDATE_BIN` | `~/local/pds/validate-4.2.0/bin/validate` | Collection、Bundle | 既定値が `~/local/pds/validate/bin/validate` なので、検証の段階で止まる |
-
-期間表（`mission_timeline.json`）の作り方は、[../README_ja.md](../README_ja.md) の「期間表を作る」にあります。
 
 ## スクリプトに共通の決まり
 
@@ -152,7 +155,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 |---|---|---|
 | `PYTHON` | miopds_common をインストールした Python | `python3` |
 | `VALIDATE_ENABLED` | `0` にすると検証を省く | `1` |
-| `VALIDATE_BIN` | PDS Validate の実行ファイル | Document：`$HOME/local/pds/validate-4.2.0/bin/validate`。Collection と Bundle：`$HOME/local/pds/validate/bin/validate` |
+| `VALIDATE_BIN` | PDS Validate の実行ファイル | `$HOME/local/pds/validate/bin/validate` |
 | `VALIDATE_CATALOG` | XML Catalog のパス（空にすると Catalog を使わない） | `pds4-validate-catalog.xml` |
 | `REPORT_DIR` | 検証のレポートの保存先 | `./pds_chk_log` |
 | `REPORT_TIMESTAMP` | レポートのファイル名に付ける日時 | 実行した日時 |
@@ -160,14 +163,14 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 検証を省く例を示します。
 
 ```bash
-VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ## 各スクリプト
 
 Bundle のラベルは Collection のラベルを集めて作るので、スクリプトは次の順に実行します。
 
-1. 観測ラベル（`make_pds_label_for_mmo_cdf_data.sh`）
+1. 観測ラベル（CDF 1つなら `make_pds_label_for_mmo_cdf_data.sh`、Collection のすべてなら `make_all_pds_label_for_collection.sh`）
 2. データの Collection（`create_psa_collection_jinja.sh`）
 3. Document（`create_psa_document_jinja.sh`。Document を入れるときだけ）
 4. Bundle（`create_psa_bundle_jinja.sh`）
@@ -192,25 +195,57 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
-| `TIMELINE` | 期間表のファイル（今は必須。上の「今のスクリプトに必要な設定」） | なし |
+| `MISSION_TIMELINE` | 期間表のファイル（任意。指定すると、ミッションフェーズを期間表から決める） | なし |
 | `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
 | `DATASET_CONFIG` | データセットの設定ファイル（機器と著者の設定は、この中に書いたパスから読む） | `config/dataset_pwi_efd.json` |
 
 出力は `OUTPUT_DIR/CDF のファイル名.lblx` です（`.cdf` を `.lblx` に変えた名前）。
-ミッションフェーズは、期間表の中で観測開始時刻が入る期間から決まります。
-`--mission-phase-name` と `--mission-phase-id` をオプションに書くと、期間表より優先されます。
+ミッションフェーズは、`MISSION_TIMELINE` を指定したときは期間表の中で観測開始時刻が入る期間から、指定しないときは `mission.json` の既定値から決まります。
+期間表（`mission_timeline.json`）の作り方は、[../README_ja.md](../README_ja.md) の「期間表を作る」にあります。
+`--mission-phase-name` と `--mission-phase-id` をオプションに書くと、どちらよりも優先されます。
 使えるオプションは `python -m miopds_common cdf2pdslabel --help` で確かめられます。
 
 例を示します。
 
 ```bash
 ./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
   pds/templates "" \
-  ~/pds4/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/sc/20270101_20271231
+  ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 見本の `dataset_pwi_efd.json` は、`REPLACE_` の値を書き換えるまでエラーになります。
+
+### Collection のすべての観測ラベル：`make_all_pds_label_for_collection.sh`
+
+1つの Collection のすべての CDF ファイルから、観測ラベルを作ります。
+ラベルはすべて作り直します。Collection のラベルとインベントリは変えません（それには `create_psa_collection_jinja.sh` を使います）。
+このスクリプトは検証をしません。
+
+```bash
+./pds/scripts/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
+```
+
+| 引数 | 意味 |
+|---|---|
+| `COLLECTION_DIR` | Collection のディレクトリ |
+| `OPTIONS` | 2つ目以降の引数は、すべての CDF について、`make_pds_label_for_mmo_cdf_data.sh` を経て `cdf2pdslabel` のオプションとして渡る |
+
+| 環境変数 | 意味 | 既定値 |
+|---|---|---|
+| `TEMPLATES_DIR` | テンプレートのディレクトリ | `templates/` |
+
+`MISSION_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE` は、そのまま観測ラベルのスクリプトに渡ります（意味は上の観測ラベルの節）。
+
+CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあってもかまいません（例：`フェーズ/データの種類/月/`）。
+ラベルは、それぞれの CDF と同じディレクトリに作ります。
+最後に、対応する CDF がないラベルを警告として表示します（ラベルは消しません。Collection のラベル自身は数えません）。
+
+例を示します。
+
+```bash
+./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
+```
 
 ### Collection：`create_psa_collection_jinja.sh`
 
@@ -221,19 +256,27 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 ```
 
 `COLLECTION_NAME` は Collection の名前です（既定は `data_calibrated_efd`）。英数字、`_`、`-` だけが使えます。
+Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡します。
+例を示します。
+
+```bash
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+```
+
+`COLLECTION_DIR` を指定しないときは、`$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` を使います。
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
-| `ARCHIVE_ROOT` | Bundle のディレクトリを置いた場所（今は必須） | サーバー固有のパス |
+| `ARCHIVE_ROOT` | Bundle のディレクトリを置いた場所（`COLLECTION_DIR` を指定しないときに使う） | `.`（実行した場所） |
 | `BUNDLE_NAME` | Bundle の名前 | `bc_mmo_pwi` |
-| `COLLECTION_DIR` | Collection のディレクトリ | `$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` |
+| `COLLECTION_DIR` | Collection のディレクトリ（親スクリプトはこれを渡す） | `$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` |
 | `LABEL_DIR` | 観測ラベルを探すディレクトリ（サブディレクトリの中も探す） | `$COLLECTION_DIR` |
 | `COLLECTION_LID` | Collection の LID | `urn:jaxa:darts:$BUNDLE_NAME:$COLLECTION_NAME` |
 | `OUTPUT_BASE` | 出力ファイルの名前（拡張子なし） | `$COLLECTION_NAME` |
 | `TEMPLATE_FILE` | テンプレート | `templates/collection_template.xml.j2` |
 | `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
 | `DATASET_CONFIG` | データセットの設定ファイル | `config/dataset_pwi_efd.json` |
-| `MISSION_TIMELINE_FILE` | 期間表のファイル（今は必須。JSON として読めるかを確かめるだけで、Collection には使わない） | `config/mission_timeline.json` |
+| `MISSION_TIMELINE` | 期間表のファイル（任意。指定したときだけ、JSON として読めるかを確かめる。Collection には使わない） | なし |
 | `PUBLICATION_YEAR` | 公開の年 | `2027` |
 | `VERSION_ID` | Collection の版 | `1.0` |
 | `VALIDATE_REPORT` | 検証で画面に出た内容の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_validate_report.txt` |
@@ -246,9 +289,6 @@ CDF ファイルが見つからないラベルは、警告を表示し、その�
 前に作った Collection のラベルは `LABEL_DIR` の中にありますが、インベントリには入りません。
 
 Collection の題名と説明は `DATASET_CONFIG` の `collection` から、Information Model の版は `MISSION_CONFIG` から読みます。
-
-macOS では、このスクリプトは `find: -printf: unknown primary or operator` で止まります（Issue #7）。
-macOS では、[../README_ja.md](../README_ja.md) のクイックスタートの B にある Python のコマンドを使ってください。
 
 ### Document：`create_psa_document_jinja.sh`
 
@@ -291,7 +331,7 @@ Document Collection の題名、説明、機器の名前は `INSTRUMENT_CONFIG` 
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds4/bc_mmo_pwi/document
+./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 ### Bundle：`create_psa_bundle_jinja.sh`
@@ -319,7 +359,7 @@ Bundle のディレクトリの下にある Collection のラベルを集めて 
 | `VALIDATE_REPORT` | PDS Validate 自身のレポート（`--report-file`）の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
 | `VALIDATE_LOG` | 検証で画面に出た内容の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
 
-出力は `BUNDLE_DIR/OUTPUT_FILE`（例：`~/pds4/bc_mmo_pwi/bc_mmo_pwi.lblx`）です。
+出力は `BUNDLE_DIR/OUTPUT_FILE`（例：`~/pds/bc_mmo_pwi/bc_mmo_pwi.lblx`）です。
 Bundle のメンバーになるのは、`BUNDLE_DIR` の下にある Collection のラベルのうち、拡張子が `.lblx` のものだけです。
 Bundle の題名と説明は `INSTRUMENT_CONFIG` の `bundle` から、Information Model の版は `MISSION_CONFIG` から読みます。
 Bundle のラベルには、著者リストを書きません。
@@ -328,7 +368,7 @@ Bundle のラベルには、著者リストを書きません。
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds4/bc_mmo_pwi
+./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ### まとめて実行・差分更新：`cron_mk_cdf_to_pds.sh`
@@ -345,21 +385,19 @@ cron などで定期的に実行すると、CDF や設定の変更が、ラベ�
 | `all` | すべての製品を作り直す（`--all` でもよい） |
 | `BUNDLE_DIR` | Bundle のディレクトリ（既定は `bc_mmo_pwi`） |
 
-今のスクリプトは、次の構成を前提にしています。
+スクリプトは、次の構成を前提にしています。
 
 ```text
-BUNDLE_DIR/data_calibrated_efd/science/**/*.cdf   データ（ラベルは CDF と同じディレクトリに作る）
-BUNDLE_DIR/document/*.pdf                         文書（なければ Document の手順を飛ばす）
+BUNDLE_DIR/data_calibrated_efd/**/*.cdf   データ（Collection の下のどのディレクトリでもよい。ラベルは CDF と同じディレクトリに作る）
+BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手順を飛ばす）
 ```
-
-そのため、クイックスタートの構成（Collection の下にフェーズと年のディレクトリがある構成）では、`ERROR: directory not found: .../science` で止まります（Issue #7）。
 
 製品は、出力がないとき、または次の入力のどれかが出力より新しいときに作り直します。
 
 | 出力 | 入力 |
 |---|---|
-| 観測ラベル（CDF ごと） | その CDF、データセットの設定ファイル |
-| Collection | `science/` の下のファイルとディレクトリ（追加と削除も含む） |
+| 観測ラベル（CDF ごと） | その CDF、データセットの設定ファイル、期間表（`MISSION_TIMELINE` を指定したとき） |
+| Collection | Collection のディレクトリの下のファイルとディレクトリ（追加と削除も含む） |
 | Document と Document Collection | PDF（`PDF_FILE`） |
 | Bundle | 各 Collection のラベル |
 | すべての製品に共通 | `templates/`、`config/`、`scripts/`、miopds_common の Python のコード |
@@ -377,6 +415,7 @@ BUNDLE_DIR/document/*.pdf                         文書（なければ Document
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
 | `BUNDLE_NAME` | Bundle の名前（ロックの名前と、Bundle のラベルの名前に使う） | `BUNDLE_DIR` の最後の部分 |
+| `MISSION_TIMELINE` | 期間表のファイル（任意。指定すると、観測ラベルのミッションフェーズを期間表から決める。観測ラベルの入力にもなる） | なし |
 | `PDF_FILE` | Document の PDF の名前 | `bc_mmo_pwi_data_user_guide.pdf` |
 | `DOCUMENT_OUTPUT` | Document のラベルの名前 | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection のラベルの名前 | `collection_bc_mmo_pwi_document.lblx` |

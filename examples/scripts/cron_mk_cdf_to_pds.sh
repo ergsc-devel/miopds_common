@@ -22,8 +22,14 @@
 #     all : rebuild everything / すべて作り直す
 #
 # Expected layout / 想定するディレクトリ構成:
-#   BUNDLE_DIR/<collection>/science/**/*.cdf   data; labels are written beside the CDF
-#   BUNDLE_DIR/document/*.pdf                  documents (optional / なくてもよい)
+#   BUNDLE_DIR/<collection>/**/*.cdf   data in any subdirectory (e.g.
+#                                      <phase>/<data_type>/<YYYYMMDD_YYYYMMDD>/,
+#                                      one directory per month);
+#                                      labels are written beside the CDF
+#                                      データ（サブディレクトリはどの構成でもよい。
+#                                      例：<フェーズ>/<データの種類>/<月>/）。
+#                                      ラベルは CDF の隣に作る
+#   BUNDLE_DIR/document/*.pdf          documents (optional / なくてもよい)
 #
 # Creating the L2 CDF files and copying them here is done by each instrument's
 # own pipeline before this script.
@@ -145,24 +151,28 @@ make_data_collection() {
   local name="$1"
   local dataset_config="$2"
   local collection_dir="$BUNDLE_DIR/$name"
-  local science_dir="$collection_dir/science"
   local collection_label="$collection_dir/$name.lblx"
   local cdf label made=0 current=0 stale=0
 
-  echo "===== [1] Labels: $science_dir"
-  [[ -d "$science_dir" ]] || {
-    echo "ERROR: directory not found: $science_dir" >&2
+  # The CDF files may be in any subdirectory of the Collection
+  # CDF は Collection の下のどのサブディレクトリにあってもよい
+  echo "===== [1] Labels: $collection_dir"
+  [[ -d "$collection_dir" ]] || {
+    echo "ERROR: directory not found: $collection_dir" >&2
     return 1
   }
-  find "$science_dir" -type f \( -name '*.cdf' -o -name '*.CDF' \) | sort > "$WORK_DIR/cdf_files.txt"
+  find "$collection_dir" -type f \( -name '*.cdf' -o -name '*.CDF' \) | sort > "$WORK_DIR/cdf_files.txt"
   [[ -s "$WORK_DIR/cdf_files.txt" ]] || {
-    echo "ERROR: no CDF file below $science_dir" >&2
+    echo "ERROR: no CDF file below $collection_dir" >&2
     return 1
   }
 
   while IFS= read -r cdf; do
     label="${cdf%.*}.lblx"
-    if needs_update "$label" "$cdf" "$dataset_config" "${COMMON_INPUTS[@]}"; then
+    # The timeline is an input only when it is given (needs_update skips "")
+    # 期間表は指定したときだけ入力になる（needs_update は "" を飛ばす）
+    if needs_update "$label" "$cdf" "$dataset_config" "${MISSION_TIMELINE:-}" \
+         "${COMMON_INPUTS[@]}"; then
       set_label_args "$cdf"
       # stdin from /dev/null: the loop reads the CDF list from stdin
       # 標準入力は /dev/null（繰り返しが標準入力から CDF の一覧を読んでいるため）
@@ -177,8 +187,10 @@ make_data_collection() {
   done < "$WORK_DIR/cdf_files.txt"
 
   # A label whose CDF is gone is only reported; the collection leaves it out.
+  # -mindepth 2 skips the Collection label itself, which has no CDF.
   # CDF がなくなったラベルは報告するだけ（Collection はそれを除外する）。
-  find "$science_dir" -type f -name '*.lblx' | sort > "$WORK_DIR/label_files.txt"
+  # -mindepth 2 で、CDF を持たない Collection のラベル自身を除く。
+  find "$collection_dir" -mindepth 2 -type f -name '*.lblx' | sort > "$WORK_DIR/label_files.txt"
   while IFS= read -r label; do
     if [[ ! -e "${label%.lblx}.cdf" && ! -e "${label%.lblx}.CDF" ]]; then
       echo "WARNING: label without CDF (not removed): $label" >&2
@@ -188,9 +200,12 @@ make_data_collection() {
   echo "Labels: $made made, $current up to date, $stale without CDF"
 
   echo "===== [2] Collection: $name"
-  if needs_update "$collection_label" "$science_dir" "$dataset_config" "${COMMON_INPUTS[@]}"; then
+  if needs_update "$collection_label" "$collection_dir" "$dataset_config" "${COMMON_INPUTS[@]}"; then
+    # The child reads the Collection directory from COLLECTION_DIR
+    # 子 shell は Collection のディレクトリを COLLECTION_DIR から読む
     BUNDLE_NAME="$BUNDLE_NAME" DATASET_CONFIG="$dataset_config" \
-      "$SCRIPT_DIR/create_psa_collection_jinja.sh" "$name" "$collection_dir"
+      COLLECTION_DIR="$collection_dir" \
+      "$SCRIPT_DIR/create_psa_collection_jinja.sh" "$name"
   else
     echo "Collection is up to date: $collection_label"
   fi

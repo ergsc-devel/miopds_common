@@ -3,16 +3,22 @@
 # Create a PSA/PDS4 Collection label and inventory, then validate the label.
 # Collection のラベルとインベントリを作り、PDS Validate でラベルを検証する。
 #
-# The label root is derived automatically from the archive root, bundle name,
-# and collection name. Labels below mission-phase and annual subdirectories are
-# discovered recursively by labels2collection.
+# The Collection directory is given by COLLECTION_DIR. Without it, the
+# directory is ARCHIVE_ROOT/BUNDLE_NAME/COLLECTION_NAME (ARCHIVE_ROOT defaults
+# to the current directory). Labels in any subdirectory (e.g.
+# <phase>/<data_type>/<YYYYMMDD_YYYYMMDD>/, one directory per month) are
+# gathered recursively by labels2collection.
+# Collection のディレクトリは COLLECTION_DIR で渡す。指定しなければ
+# ARCHIVE_ROOT/BUNDLE_NAME/COLLECTION_NAME になる（ARCHIVE_ROOT の既定値は
+# 実行した場所）。どのサブディレクトリのラベルも（例：<フェーズ>/<データの種類>/
+# <YYYYMMDD_YYYYMMDD>/、月ごとのディレクトリ）、labels2collection が再帰的に集める。
 #
 # Usage / 使い方:
-#   create_psa_collection_jinja_dynamic.sh [COLLECTION_NAME]
+#   create_psa_collection_jinja.sh [COLLECTION_NAME]
 #
 # Optional environment overrides:
 #   ARCHIVE_ROOT, BUNDLE_NAME, COLLECTION_DIR, LABEL_DIR,
-#   MISSION_TIMELINE_FILE, PYTHON, VALIDATE_ENABLED
+#   MISSION_TIMELINE, PYTHON, VALIDATE_ENABLED
 #
 set -euo pipefail
 
@@ -22,17 +28,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COLLECTION_NAME="${1:-data_calibrated_efd}"
 BUNDLE_NAME="${BUNDLE_NAME:-bc_mmo_pwi}"
 
-# Root containing bundle directories such as bc_mmo_pwi.
-ARCHIVE_ROOT="${ARCHIVE_ROOT:-/var/www/html/data/chs/satellite/mmo/pds4}"
+# Root containing bundle directories such as bc_mmo_pwi (default: the current
+# directory). On a server, set it in the cron line.
+# bc_mmo_pwi などの Bundle のディレクトリを置いた場所（既定値は実行した場所）。
+# サーバーでは cron の行で指定する。
+ARCHIVE_ROOT="${ARCHIVE_ROOT:-.}"
 ARCHIVE_ROOT="${ARCHIVE_ROOT%/}"
 
 # Derive the collection directory automatically. COLLECTION_DIR remains an
 # environment override for testing or a non-standard deployment.
-COLLECTION_DIR="${COLLECTION_DIR:-${ARCHIVE_ROOT}/${BUNDLE_NAME}/${COLLECTION_NAME}}"
+COLLECTION_DIR="${COLLECTION_DIR:-${ARCHIVE_ROOT}/${BUNDLE_NAME}}"
 COLLECTION_DIR="${COLLECTION_DIR%/}"
 
-# The dynamic label-generation cron writes products below this science root:
-#   <mission-phase-path>/<YYYY0101_YYYY1231>/*.lblx
+# Labels are searched recursively below this directory, e.g.
+#   <phase>/<data_type>/<YYYYMMDD_YYYYMMDD>/*.lblx  (one directory per month)
+# このディレクトリの下のラベルを再帰的に探す（上は月ごとのディレクトリの例）。
 LABEL_DIR="${LABEL_DIR:-${COLLECTION_DIR}/}"
 LABEL_DIR="${LABEL_DIR%/}"
 
@@ -45,7 +55,10 @@ VERSION_ID="${VERSION_ID:-1.0}"
 TEMPLATE_FILE="${TEMPLATE_FILE:-$SCRIPT_DIR/../templates/collection_template.xml.j2}"
 MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../config/mission.json}"
 DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../config/dataset_pwi_efd.json}"
-MISSION_TIMELINE_FILE="${MISSION_TIMELINE_FILE:-$SCRIPT_DIR/../config/mission_timeline.json}"
+# Timeline (optional): checked only when it is given. labels2collection does
+# not read it.
+# 期間表（任意）：指定したときだけ確かめる。labels2collection は読まない。
+MISSION_TIMELINE="${MISSION_TIMELINE:-}"
 
 # -- Reports and PDS Validate --------------------------------------------------
 REPORT_DIR="${REPORT_DIR:-./pds_chk_log}"
@@ -74,8 +87,7 @@ esac
 for required_file in \
   "$TEMPLATE_FILE" \
   "$MISSION_CONFIG" \
-  "$DATASET_CONFIG" \
-  "$MISSION_TIMELINE_FILE"
+  "$DATASET_CONFIG"
 do
   [[ -r "$required_file" ]] || {
     echo "ERROR: required file is not readable: $required_file" >&2
@@ -83,10 +95,16 @@ do
   }
 done
 
-"$PYTHON" -m json.tool "$MISSION_TIMELINE_FILE" >/dev/null || {
-  echo "ERROR: invalid mission timeline JSON: $MISSION_TIMELINE_FILE" >&2
-  exit 1
-}
+if [[ -n "$MISSION_TIMELINE" ]]; then
+  [[ -r "$MISSION_TIMELINE" ]] || {
+    echo "ERROR: MISSION_TIMELINE is not readable: $MISSION_TIMELINE" >&2
+    exit 1
+  }
+  "$PYTHON" -m json.tool "$MISSION_TIMELINE" >/dev/null || {
+    echo "ERROR: invalid mission timeline JSON: $MISSION_TIMELINE" >&2
+    exit 1
+  }
+fi
 
 [[ -d "$COLLECTION_DIR" ]] || {
   echo "ERROR: Collection directory was not found: $COLLECTION_DIR" >&2
@@ -98,7 +116,7 @@ done
   exit 1
 }
 
-# Count labels recursively. The phase/year paths are not hard-coded here.
+# Count labels recursively. The phase/month paths are not hard-coded here.
 LABEL_COUNT=$(find "$LABEL_DIR" -type f -name '*.lblx' -print | wc -l)
 if (( LABEL_COUNT == 0 )); then
   echo "ERROR: No LBLX files were found below: $LABEL_DIR" >&2
@@ -110,19 +128,21 @@ mkdir -p "$REPORT_DIR"
 echo "Collection name : $COLLECTION_NAME"
 echo "Collection dir  : $COLLECTION_DIR"
 echo "Label root      : $LABEL_DIR"
-echo "Timeline JSON   : $MISSION_TIMELINE_FILE"
+echo "Timeline JSON   : ${MISSION_TIMELINE:-(not set)}"
 echo "LBLX files      : $LABEL_COUNT"
 
-# Show the mission-phase directories that currently contain labels. This is
-# diagnostic only; labels2collection receives the common science root.
+# Show the directories that currently contain labels. This is diagnostic
+# only; labels2collection receives LABEL_DIR.
+# -exec dirname works with both GNU and BSD (macOS) find; -printf is GNU only.
+# -exec dirname は GNU と BSD（macOS）の find の両方で使える。-printf は GNU だけ。
 echo "Label directories:"
-find "$LABEL_DIR" -type f -name '*.lblx' -printf '%h\n' |
+find "$LABEL_DIR" -type f -name '*.lblx' -exec dirname {} \; |
   sort -u |
   sed 's/^/  /'
 
 # -- Generate ------------------------------------------------------------------
-# labels2collection receives the common science root and recursively gathers
-# labels from mission-phase and annual directories created by the label cron.
+# labels2collection receives LABEL_DIR and recursively gathers the labels in
+# all its subdirectories.
 "$PYTHON" -m miopds_common labels2collection \
   "$LABEL_DIR" \
   "$COLLECTION_DIR" \
