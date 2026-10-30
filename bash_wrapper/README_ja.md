@@ -1,10 +1,10 @@
-# shell スクリプトとテンプレートの見本（examples）
+# shell スクリプト（bash_wrapper）
 
 [English](README.md)
 
-`examples/` は、miopds_common を使って PSA/PDS4 アーカイブを作るための見本です。
-shell スクリプト、Jinja2 テンプレート、設定ファイル（JSON）が入っています。
-各機器のリポジトリ（例：`instrument_repo`）に `pds/` という名前でコピーし、機器に合わせて書き換えて使います。
+`bash_wrapper/` には、miopds_common の Python のサブコマンドを呼んで PSA/PDS4 アーカイブを作る shell スクリプトが入っています。
+スクリプトが使うテンプレートは `label_templates/` に、設定ファイル（JSON）は `user_config/` にあります。
+3つのディレクトリを、各機器のリポジトリ（例：`instrument_repo`）の `pds/` の下にコピーして使います。
 
 この文書は、各スクリプトの引数、環境変数、出力を調べるための説明書です。
 最初から順に動かす手順は、[../README_ja.md](../README_ja.md) の「クイックスタート」にあります。
@@ -17,33 +17,36 @@ shell スクリプト、Jinja2 テンプレート、設定ファイル（JSON）
 ## 中身
 
 ```text
-examples/
-├── scripts/     # shell スクリプト
-├── templates/   # Jinja2 テンプレート（*.xml.j2）
-└── config/      # 設定ファイル（*.json）
+pds/                     # 機器のリポジトリの中（miopds_common ではリポジトリの直下）
+├── bash_wrapper/        # shell スクリプト（この文書）
+│   └── mio_examples/    # 特定の機器の環境に合わせた例
+│       └── pwi_efd/     # PWI-EFD の例
+├── label_templates/     # Jinja2 テンプレート（*.xml.j2）
+└── user_config/         # 設定ファイル（*.json）
 ```
 
 | ファイル | 用途 |
 |---|---|
-| `scripts/make_pds_label_for_mmo_cdf_data.sh` | CDF ファイル1つから観測ラベル（`.lblx`）を作る |
-| `scripts/make_all_pds_label_for_collection.sh` | 1つの Collection のすべての CDF ファイルから観測ラベルを作る |
-| `scripts/create_psa_collection_jinja.sh` | データの Collection のラベルとインベントリを作り、検証する |
-| `scripts/create_psa_document_jinja.sh` | Document のラベルと Document Collection を作り、検証する |
-| `scripts/create_psa_bundle_jinja.sh` | Bundle のラベルを作り、Bundle 全体を検証する |
-| `scripts/cron_mk_cdf_to_pds.sh` | 上の4つを順に呼び、入力が変わった製品だけを作り直す（cron での定期実行を想定） |
-| `templates/mmo_cdf_label_template_multi_dataset.xml.j2` | 観測ラベルのテンプレート |
-| `templates/collection_template.xml.j2` | データの Collection のラベルのテンプレート |
-| `templates/document_template.xml.j2` | Document のラベルのテンプレート |
-| `templates/document_collection_template.xml.j2` | Document Collection のラベルのテンプレート |
-| `templates/bundle_template.xml.j2` | Bundle のラベルのテンプレート |
-| `config/mission.json` | ミッションの設定（すべての Mio の機器で共通） |
-| `config/instrument_pwi.json` | 機器の設定（PWI の記入例） |
-| `config/dataset_pwi_efd.json` | データセットの設定（PWI-EFD の記入例。`REPLACE_` の値を書き換えてから使う） |
-| `config/authors_pwi_efd.json` | 著者リストの記入例（PWI-EFD） |
-| `config/authors_instrument_example.json` | 著者リストのひな形 |
-| `config/README.md`、`config/README_ja.md` | 設定ファイルの項目と、ラベルのどこに入るかの説明（英語、日本語） |
+| `bash_wrapper/make_pds_label_for_mmo_cdf_data.sh` | CDF ファイル1つから観測ラベル（`.lblx`）を作る |
+| `bash_wrapper/make_all_pds_label_for_collection.sh` | 1つの Collection のすべての CDF ファイルから観測ラベルを作る |
+| `bash_wrapper/create_psa_collection_jinja.sh` | データの Collection のラベルとインベントリを作り、検証する |
+| `bash_wrapper/create_psa_document_jinja.sh` | Document のラベルと Document Collection を作り、検証する |
+| `bash_wrapper/create_psa_bundle_jinja.sh` | Bundle のラベルを作り、Bundle 全体を検証する |
+| `bash_wrapper/cron_mk_cdf_to_pds.sh` | 上の4つを順に呼び、入力が変わった製品だけを作り直す（cron での定期実行を想定） |
+| `bash_wrapper/mio_examples/pwi_efd/make_pds_labels_simple.sh` | 指定したディレクトリの CDF の観測ラベルを、別のディレクトリに作る例。ある環境に合わせたパスが書かれているので、使うときは書き換える |
+| `label_templates/mmo_cdf_label_template_multi_dataset.xml.j2` | 観測ラベルのテンプレート |
+| `label_templates/collection_template.xml.j2` | データの Collection のラベルのテンプレート |
+| `label_templates/document_template.xml.j2` | Document のラベルのテンプレート |
+| `label_templates/document_collection_template.xml.j2` | Document Collection のラベルのテンプレート |
+| `label_templates/bundle_template.xml.j2` | Bundle のラベルのテンプレート |
+| `user_config/mission.json` | ミッションの設定（すべての Mio の機器で共通） |
+| `user_config/instrument_pwi.json` | 機器の設定（PWI の記入例） |
+| `user_config/dataset_pwi_efd.json` | データセットの設定（PWI-EFD の記入例。`REPLACE_` の値を書き換えてから使う） |
+| `user_config/authors_pwi_efd.json` | 著者リストの記入例（PWI-EFD） |
+| `user_config/authors_instrument_example.json` | 著者リストのひな形 |
+| `user_config/README.md`、`user_config/README_ja.md` | 設定ファイルの項目と、ラベルのどこに入るかの説明（英語、日本語） |
 
-設定ファイルの書き方は [config/README_ja.md](config/README_ja.md) を見てください。
+設定ファイルの書き方は [../user_config/README_ja.md](../user_config/README_ja.md) を見てください。
 
 ## 準備
 
@@ -62,14 +65,14 @@ Python のコマンドの名前（`python3` か `python` か）と venv の場�
 | 実行のしかた | 指定の方法 |
 |---|---|
 | 手で実行する | venv を有効にする（`source ~/mio_pds_validate/bin/activate`）か、`export PYTHON=~/mio_pds_validate/bin/python` を実行する |
-| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` のように、コマンドの前に書く |
+| 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` のように、コマンドの前に書く |
 | cron で実行する | crontab の行に `PYTHON=$HOME/mio_pds_validate/bin/python` を書く。cron は venv を有効にせず、PATH も最小限なので、この指定が必ず必要 |
 | 機器のリポジトリで固定する | コピーした shell の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
 
 crontab の行の例を示します（パスは例です。サーバーに合わせて書き換えてください）。
 
 ```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/bash_wrapper/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
 指定した Python に miopds_common が入っているかは、次のコマンドで確かめられます。
@@ -142,7 +145,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 
 ## スクリプトに共通の決まり
 
-- テンプレートと設定ファイルは、スクリプトの場所からの相対パス（`../templates/`、`../config/`）で探します。
+- テンプレートと設定ファイルは、スクリプトの場所からの相対パス（`../label_templates/`、`../user_config/`）で探します。
 - 検証のレポートは、実行した場所からの相対パス（既定は `./pds_chk_log/`）に保存します。
 - 観測ラベルのスクリプトを除き、作ったラベルを `python -m miopds_common validate` で検証します。
 - どこかで失敗すると、その時点で止まります。
@@ -163,7 +166,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 検証を省く例を示します。
 
 ```bash
-VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+VALIDATE_ENABLED=0 ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ## 各スクリプト
@@ -182,7 +185,7 @@ Bundle のラベルは Collection のラベルを集めて作るので、スク�
 CDF ファイル1つから、観測ラベルを1つ作ります。このスクリプトは検証をしません。
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]
 ```
 
 | 引数 | 意味 |
@@ -196,8 +199,8 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
 | `MISSION_TIMELINE` | 期間表のファイル（任意。指定すると、ミッションフェーズを期間表から決める） | なし |
-| `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
-| `DATASET_CONFIG` | データセットの設定ファイル（機器と著者の設定は、この中に書いたパスから読む） | `config/dataset_pwi_efd.json` |
+| `MISSION_CONFIG` | ミッションの設定ファイル | `user_config/mission.json` |
+| `DATASET_CONFIG` | データセットの設定ファイル（機器と著者の設定は、この中に書いたパスから読む） | `user_config/dataset_pwi_efd.json` |
 
 出力は `OUTPUT_DIR/CDF のファイル名.lblx` です（`.cdf` を `.lblx` に変えた名前）。
 ミッションフェーズは、`MISSION_TIMELINE` を指定したときは期間表の中で観測開始時刻が入る期間から、指定しないときは `mission.json` の既定値から決まります。
@@ -208,9 +211,9 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 例を示します。
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates "" \
+  pds/label_templates "" \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
@@ -223,7 +226,7 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 このスクリプトは検証をしません。
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
 ```
 
 | 引数 | 意味 |
@@ -233,7 +236,7 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
-| `TEMPLATES_DIR` | テンプレートのディレクトリ | `templates/` |
+| `TEMPLATES_DIR` | テンプレートのディレクトリ | `label_templates/` |
 
 `MISSION_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE` は、そのまま観測ラベルのスクリプトに渡ります（意味は上の観測ラベルの節）。
 
@@ -244,7 +247,7 @@ CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあ�
 例を示します。
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 ### Collection：`create_psa_collection_jinja.sh`
@@ -252,7 +255,7 @@ CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあ�
 データの Collection のラベルとインベントリを作り、Collection のラベルを検証します。
 
 ```bash
-./pds/scripts/create_psa_collection_jinja.sh [COLLECTION_NAME]
+./pds/bash_wrapper/create_psa_collection_jinja.sh [COLLECTION_NAME]
 ```
 
 `COLLECTION_NAME` は Collection の名前です（既定は `data_calibrated_efd`）。英数字、`_`、`-` だけが使えます。
@@ -260,7 +263,7 @@ Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡しま
 例を示します。
 
 ```bash
-COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/bash_wrapper/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 `COLLECTION_DIR` を指定しないときは、`$ARCHIVE_ROOT/$BUNDLE_NAME/$COLLECTION_NAME` を使います。
@@ -273,9 +276,9 @@ COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_col
 | `LABEL_DIR` | 観測ラベルを探すディレクトリ（サブディレクトリの中も探す） | `$COLLECTION_DIR` |
 | `COLLECTION_LID` | Collection の LID | `urn:jaxa:darts:$BUNDLE_NAME:$COLLECTION_NAME` |
 | `OUTPUT_BASE` | 出力ファイルの名前（拡張子なし） | `$COLLECTION_NAME` |
-| `TEMPLATE_FILE` | テンプレート | `templates/collection_template.xml.j2` |
-| `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
-| `DATASET_CONFIG` | データセットの設定ファイル | `config/dataset_pwi_efd.json` |
+| `TEMPLATE_FILE` | テンプレート | `label_templates/collection_template.xml.j2` |
+| `MISSION_CONFIG` | ミッションの設定ファイル | `user_config/mission.json` |
+| `DATASET_CONFIG` | データセットの設定ファイル | `user_config/dataset_pwi_efd.json` |
 | `MISSION_TIMELINE` | 期間表のファイル（任意。指定したときだけ、JSON として読めるかを確かめる。Collection には使わない） | なし |
 | `PUBLICATION_YEAR` | 公開の年 | `2027` |
 | `VERSION_ID` | Collection の版 | `1.0` |
@@ -295,7 +298,7 @@ Collection の題名と説明は `DATASET_CONFIG` の `collection` から、Info
 PDF から Document のラベルと Document Collection（ラベルとインベントリ）を作り、2つのラベルを検証します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh [DOCUMENT_DIR]
+./pds/bash_wrapper/create_psa_document_jinja.sh [DOCUMENT_DIR]
 ```
 
 `DOCUMENT_DIR` は PDF を置いたディレクトリです（既定は `bc_mmo_pwi/document`）。
@@ -316,10 +319,10 @@ PDF から Document のラベルと Document Collection（ラベルとインベ�
 | `DOCUMENT_OUTPUT` | Document のラベルの名前 | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection のラベルの名前（`.lblx`） | `collection_bc_mmo_pwi_document.lblx` |
 | `INVENTORY_OUTPUT` | インベントリの名前（`COLLECTION_OUTPUT` の `.lblx` を `.csv` に変えた名前にする） | `collection_bc_mmo_pwi_document.csv` |
-| `DOCUMENT_TEMPLATE` | Document のテンプレート | `templates/document_template.xml.j2` |
-| `COLLECTION_TEMPLATE` | Document Collection のテンプレート | `templates/document_collection_template.xml.j2` |
-| `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
-| `INSTRUMENT_CONFIG` | 機器の設定ファイル | `config/instrument_pwi.json` |
+| `DOCUMENT_TEMPLATE` | Document のテンプレート | `label_templates/document_template.xml.j2` |
+| `COLLECTION_TEMPLATE` | Document Collection のテンプレート | `label_templates/document_collection_template.xml.j2` |
+| `MISSION_CONFIG` | ミッションの設定ファイル | `user_config/mission.json` |
+| `INSTRUMENT_CONFIG` | 機器の設定ファイル | `user_config/instrument_pwi.json` |
 | `DOCUMENT_REPORT` | Document のラベルの検証の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_validate_report.txt` |
 | `COLLECTION_REPORT` | Document Collection のラベルの検証の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_collection_validate_report.txt` |
 
@@ -331,7 +334,7 @@ Document Collection の題名、説明、機器の名前は `INSTRUMENT_CONFIG` 
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
+./pds/bash_wrapper/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 ### Bundle：`create_psa_bundle_jinja.sh`
@@ -339,7 +342,7 @@ Document Collection の題名、説明、機器の名前は `INSTRUMENT_CONFIG` 
 Bundle のディレクトリの下にある Collection のラベルを集めて Bundle のラベルを作り、Bundle 全体を検証します。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh [BUNDLE_DIR]
+./pds/bash_wrapper/create_psa_bundle_jinja.sh [BUNDLE_DIR]
 ```
 
 `BUNDLE_DIR` は Bundle のディレクトリです（既定は `bc_mmo_pwi`）。
@@ -352,9 +355,9 @@ Bundle のディレクトリの下にある Collection のラベルを集めて 
 | `PUBLICATION_YEAR` | 公開の年 | `2027` |
 | `MODIFICATION_DATE` | 変更の日付（`YYYY-MM-DD`） | 実行した日（UTC） |
 | `OUTPUT_FILE` | Bundle のラベルの名前 | `$BUNDLE_NAME.lblx` |
-| `TEMPLATE_FILE` | テンプレート | `templates/bundle_template.xml.j2` |
-| `MISSION_CONFIG` | ミッションの設定ファイル | `config/mission.json` |
-| `INSTRUMENT_CONFIG` | 機器の設定ファイル | `config/instrument_pwi.json` |
+| `TEMPLATE_FILE` | テンプレート | `label_templates/bundle_template.xml.j2` |
+| `MISSION_CONFIG` | ミッションの設定ファイル | `user_config/mission.json` |
+| `INSTRUMENT_CONFIG` | 機器の設定ファイル | `user_config/instrument_pwi.json` |
 | `BUNDLE_LABEL_EXTENSION` | 検証でラベルとみなす拡張子（空にすると PDS Validate の既定の `xml`） | `lblx` |
 | `VALIDATE_REPORT` | PDS Validate 自身のレポート（`--report-file`）の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
 | `VALIDATE_LOG` | 検証で画面に出た内容の保存先 | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
@@ -368,7 +371,7 @@ Bundle のラベルには、著者リストを書きません。
 例を示します。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ### まとめて実行・差分更新：`cron_mk_cdf_to_pds.sh`
@@ -377,7 +380,7 @@ Bundle のラベルには、著者リストを書きません。
 cron などで定期的に実行すると、CDF や設定の変更が、ラベル、Collection、Bundle に反映されます。
 
 ```bash
-./pds/scripts/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
 ```
 
 | 引数 | 意味 |
@@ -400,7 +403,7 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | Collection | Collection のディレクトリの下のファイルとディレクトリ（追加と削除も含む） |
 | Document と Document Collection | PDF（`PDF_FILE`） |
 | Bundle | 各 Collection のラベル |
-| すべての製品に共通 | `templates/`、`config/`、`scripts/`、miopds_common の Python のコード |
+| すべての製品に共通 | `label_templates/`、`user_config/`、`bash_wrapper/`、miopds_common の Python のコード |
 
 テンプレート、設定ファイル、shell のどれかを書き換えると、すべての製品を作り直します。
 観測ラベルは CDF 1つごとに Python を起動するので、作り直す CDF が多いと時間がかかります。
@@ -420,9 +423,9 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | `DOCUMENT_OUTPUT` | Document のラベルの名前 | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection のラベルの名前 | `collection_bc_mmo_pwi_document.lblx` |
 | `OUTPUT_FILE` | Bundle のラベルの名前 | `BUNDLE_DIR` の最後の部分 + `.lblx` |
-| `DATASET_CONFIG` | データの Collection のデータセットの設定ファイル | `config/dataset_pwi_efd.json` |
-| `TEMPLATES_DIR` | テンプレートのディレクトリ | `templates/` |
-| `CONFIG_DIR` | 設定ファイルのディレクトリ | `config/` |
+| `DATASET_CONFIG` | データの Collection のデータセットの設定ファイル | `user_config/dataset_pwi_efd.json` |
+| `TEMPLATES_DIR` | テンプレートのディレクトリ | `label_templates/` |
+| `CONFIG_DIR` | 設定ファイルのディレクトリ | `user_config/` |
 | `LOCK_DIR` | ロックの場所 | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
 
 実行の決まりは次のとおりです。
@@ -440,4 +443,4 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 |---|---|
 | [../README_ja.md](../README_ja.md) | インストールと、最初から順に動かすクイックスタート |
 | [../docs/usage_ja.md](../docs/usage_ja.md) | サブコマンドとオプション、Python からの使い方、`validate` サブコマンド、既知の問題 |
-| [config/README_ja.md](config/README_ja.md) | 設定ファイルの項目と、ラベルのどこに入るか |
+| [../user_config/README_ja.md](../user_config/README_ja.md) | 設定ファイルの項目と、ラベルのどこに入るか |

@@ -15,8 +15,8 @@ from miopds_common._cli import collection_main
 from miopds_common.filetool import md5_of_bytes
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "examples" / "config"
-TEMPLATES = ROOT / "examples" / "templates"
+CONFIG = ROOT / "user_config"
+TEMPLATES = ROOT / "label_templates"
 LABEL_TEMPLATE = TEMPLATES / "mmo_cdf_label_template_multi_dataset.xml.j2"
 COLLECTION_TEMPLATE = TEMPLATES / "collection_template.xml.j2"
 

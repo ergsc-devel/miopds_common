@@ -52,9 +52,9 @@ PUBLICATION_YEAR="${PUBLICATION_YEAR:-2027}"
 VERSION_ID="${VERSION_ID:-1.0}"
 
 # Template and config files.
-TEMPLATE_FILE="${TEMPLATE_FILE:-$SCRIPT_DIR/../templates/collection_template.xml.j2}"
-MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../config/mission.json}"
-DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../config/dataset_pwi_efd.json}"
+TEMPLATE_FILE="${TEMPLATE_FILE:-$SCRIPT_DIR/../label_templates/collection_template.xml.j2}"
+MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../user_config/mission.json}"
+DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../user_config/dataset_pwi_efd.json}"
 # Timeline (optional): checked only when it is given. labels2collection does
 # not read it.
 # 期間表（任意）：指定したときだけ確かめる。labels2collection は読まない。

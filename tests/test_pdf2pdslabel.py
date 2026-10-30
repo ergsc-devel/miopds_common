@@ -11,8 +11,8 @@ from miopds_common import labels2collection, pdf2pdslabel
 from miopds_common._cli import document_main, document_set_main
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "examples" / "config"
-TEMPLATES = ROOT / "examples" / "templates"
+CONFIG = ROOT / "user_config"
+TEMPLATES = ROOT / "label_templates"
 DOCUMENT_TEMPLATE = TEMPLATES / "document_template.xml.j2"
 COLLECTION_TEMPLATE = TEMPLATES / "document_collection_template.xml.j2"
 

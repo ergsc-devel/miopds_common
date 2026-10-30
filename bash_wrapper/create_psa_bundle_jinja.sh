@@ -11,8 +11,8 @@
 # Default output / 既定の出力:
 #   bc_mmo_pwi/bc_mmo_pwi.lblx
 #
-# Other settings are environment variables (see ../README.md).
-# その他の設定は環境変数で変更する（../README.md を参照）。
+# Other settings are environment variables (see README.md).
+# その他の設定は環境変数で変更する（README.md を参照）。
 #
 set -euo pipefail
 
@@ -30,9 +30,9 @@ MODIFICATION_DATE="${MODIFICATION_DATE:-$(date -u +%F)}"
 OUTPUT_FILE="${OUTPUT_FILE:-${BUNDLE_NAME}.lblx}"
 
 # Template and config files / テンプレートと設定ファイル
-TEMPLATE_FILE="${TEMPLATE_FILE:-${SCRIPT_DIR}/../templates/bundle_template.xml.j2}"
-MISSION_CONFIG="${MISSION_CONFIG:-${SCRIPT_DIR}/../config/mission.json}"
-INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-${SCRIPT_DIR}/../config/instrument_pwi.json}"
+TEMPLATE_FILE="${TEMPLATE_FILE:-${SCRIPT_DIR}/../label_templates/bundle_template.xml.j2}"
+MISSION_CONFIG="${MISSION_CONFIG:-${SCRIPT_DIR}/../user_config/mission.json}"
+INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-${SCRIPT_DIR}/../user_config/instrument_pwi.json}"
 
 # -- Reports and PDS Validate / レポートと PDS Validate ---------------------------
 REPORT_DIR="${REPORT_DIR:-./pds_chk_log}"
@@ -49,9 +49,9 @@ VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no cata
 BUNDLE_LABEL_EXTENSION="${BUNDLE_LABEL_EXTENSION-lblx}"
 
 # Python that has miopds_common installed. It differs between servers
-# (python3 or python, venv path): set PYTHON for each server (../README.md).
+# (python3 or python, venv path): set PYTHON for each server (README.md).
 # miopds_common をインストールした Python。サーバーごとに異なるので
-# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（../README.md）。
+# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（README.md）。
 PYTHON="${PYTHON:-python3}"
 
 # -- Checks / 事前確認 ------------------------------------------------------------

@@ -1,5 +1,5 @@
-"""Config files for tests, based on examples/config.
-examples/config をもとにした、テスト用の設定ファイル。
+"""Config files for tests, based on user_config.
+user_config をもとにした、テスト用の設定ファイル。
 
 The example dataset contains REPLACE_ placeholders, which are rejected when
 loaded, so tests use a copy with the placeholders filled in.
@@ -10,7 +10,7 @@ loaded, so tests use a copy with the placeholders filled in.
 import json
 from pathlib import Path
 
-EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "config"
+EXAMPLES = Path(__file__).resolve().parents[1] / "user_config"
 
 FILLED_COLLECTION = {
     "collection_type": "Data",
@@ -37,8 +37,8 @@ def filled_dataset(directory: Path) -> Path:
     """Write a usable dataset config into directory and return its path.
     そのまま使える dataset の設定ファイルを directory に書き、そのパスを返す。
 
-    The instrument and authors files point to examples/config.
-    機器と著者のファイルは examples/config のものを指す。
+    The instrument and authors files point to user_config.
+    機器と著者のファイルは user_config のものを指す。
     """
     data = dataset_dict()
     data["instrument_file"] = str(EXAMPLES / "instrument_pwi.json")

@@ -16,14 +16,14 @@ OUTPUT_DIR="$2"
 
 # Fixed settings depending on the usage environment
 source ~/work_local/.3_13/bin/activate
-LABEL_SCRIPT="${HOME}/work_local/pds_pipeline/common/examples/scripts/make_pds_label_for_mmo_cdf_data.sh"
-TEMPLATE_DIR="${HOME}/work_local/pds_pipeline/common/examples/templates"
+LABEL_SCRIPT="${HOME}/work_local/pds_pipeline/common/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh"
+TEMPLATE_DIR="${HOME}/work_local/pds_pipeline/common/label_templates"
 TEMPLATE_NAME="mmo_cdf_label_template_multi_dataset.xml.j2"
 
 # Settings referenced by the label generation script
-export MISSION_CONFIG="${HOME}/work_local/pds_pipeline/common/examples/config/mission.json"
+export MISSION_CONFIG="${HOME}/work_local/pds_pipeline/common/user_config/mission.json"
 export DATASET_CONFIG="${HOME}/work_local/data_pipeline/mmo/pwi/efd/pds/config/dataset_pwi_efd.json"
-export MISSION_TIMELINE="${HOME}/work_local/pds_pipeline/common/examples/config/mission_timeline.json"
+export MISSION_TIMELINE="${HOME}/work_local/pds_pipeline/common/user_config/mission_timeline.json"
 export PYTHON="${PYTHON:-python3}"
 
 if [[ ! -d "$CDF_DIR" ]]; then

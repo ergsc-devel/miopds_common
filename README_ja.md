@@ -8,10 +8,16 @@ miopds_common は、BepiColombo/Mio（MMO）の観測データ（CDF）から PS
 CDF ファイル1つごとの観測ラベル（`.lblx`）、Collection のラベルとインベントリ、Document のラベル、Bundle のラベルを作り、NASA PDS Validate で検証します。
 Mio の各機器でアーカイブを担当する人が使うことを想定しています。
 
-リポジトリは2つの部分に分かれています。
-`miopds_common/` は、pip でインストールする Python パッケージです。
-`examples/` には、shell スクリプト、Jinja2 テンプレート、設定ファイル（JSON）の見本があります。
-`examples/` は pip ではインストールされないので、各機器のリポジトリにコピーして使います。
+リポジトリは4つの部分に分かれています。
+
+| ディレクトリ | 中身 | 使い方 |
+|---|---|---|
+| `miopds_common/` | Python パッケージ | pip でインストールします |
+| `label_templates/` | ラベルの Jinja2 テンプレート | 各機器のリポジトリにコピーして使います |
+| `bash_wrapper/` | Python のサブコマンドを呼ぶ shell スクリプト。`mio_examples/` には、特定の機器の環境に合わせた例を、機器ごとのディレクトリ（例：`pwi_efd/`）に置きます | 各機器のリポジトリにコピーして使います |
+| `user_config/` | 設定ファイル（JSON）の見本。PWI-EFD の値が入っています | 各機器のリポジトリにコピーし、機器に合わせて書き換えます |
+
+`label_templates/`、`bash_wrapper/`、`user_config/` は、pip ではインストールされません。
 
 ## インストール
 
@@ -47,7 +53,7 @@ git clone https://github.com/ergsc-devel/miopds_common.git
 ### 3. venv を作ってインストールする
 
 venv の作り方は2通りあり、どちらか一方を使います。
-以下では、venv の場所を `~/mio_pds_validate` とします（`examples/README_ja.md` と同じ名前です）。
+以下では、venv の場所を `~/mio_pds_validate` とします（`bash_wrapper/README_ja.md` と同じ名前です）。
 
 Python 標準の venv を使う場合は、次の3つを順に実行します。
 
@@ -81,7 +87,7 @@ uv pip install --python ~/mio_pds_validate/bin/python ~/miopds_common
 `source ~/mio_pds_validate/bin/activate` は、venv を有効にするコマンドです。
 有効にすると、そのターミナルの `python` と `pip` が venv のものになります。
 新しいターミナルを開いたときは、もう一度実行してください。
-cron から実行するときは venv が有効にならないので、[examples/README_ja.md](examples/README_ja.md) の「サーバーごとに使う Python を指定する」の方法で Python を指定します。
+cron から実行するときは venv が有効にならないので、[bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「サーバーごとに使う Python を指定する」の方法で Python を指定します。
 
 ### 4. インストールを確かめる
 
@@ -97,24 +103,24 @@ python -c 'import miopds_common; print(miopds_common.__file__)'
 手順は [docs/usage_ja.md](docs/usage_ja.md) の「開発」にあります。
 
 PDS Validate（検証に使う Java のツール）は、検証するときだけ必要です。
-インストールの手順は [examples/README_ja.md](examples/README_ja.md) の「PDS Validate 4.2.0 のインストール」にあります。
+インストールの手順は [bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「PDS Validate 4.2.0 のインストール」にあります。
 
 ## クイックスタート
 
 ### 準備
 
 コマンドは、機器のリポジトリの一番上で実行します。
-機器のリポジトリには、miopds_common の `examples/` をコピーし、`pds/` という名前で置きます。
+機器のリポジトリには、miopds_common の `label_templates/`、`bash_wrapper/`、`user_config/` を、`pds/` というディレクトリの下にコピーします。
 データ（Bundle のディレクトリ）は、リポジトリの外に置きます。
 以下の例では、Bundle を `~/pds/bc_mmo_pwi/` に置き、PWI-EFD の見本の値（Bundle が `bc_mmo_pwi`、Collection が `data_calibrated_efd`）を使います。
 ほかの機器では、名前と場所を読み替えてください。
 
 ```text
 instrument_repo/                          # 機器のリポジトリ（例）
-└── pds/                                  # miopds_common の examples/ をコピーしたもの
-    ├── scripts/
-    ├── templates/
-    └── config/
+└── pds/
+    ├── bash_wrapper/                     # miopds_common の bash_wrapper/ のコピー
+    ├── label_templates/                  # miopds_common の label_templates/ のコピー
+    └── user_config/                      # miopds_common の user_config/ のコピー（書き換える）
 
 ~/pds/
 └── bc_mmo_pwi/                           # Bundle のディレクトリ
@@ -131,23 +137,32 @@ instrument_repo/                          # 機器のリポジトリ（例）
 月ごとのディレクトリの名前は、その月の初日と末日です（例：`20270101_20270131`）。
 観測ラベルは、CDF と同じディレクトリに作ります。
 
-1. `examples/` を、`pds/` という名前で機器のリポジトリにコピーします。
-   `pds/` がまだないときに実行してください（すでにあると、`pds/examples/` ができてしまいます）。
+1. `label_templates/`、`bash_wrapper/`、`user_config/` を、機器のリポジトリの `pds/` の下にコピーします。
+   まず、`pds/` を作ります（`mkdir -p` は、ディレクトリがすでにあれば何もしません）。
 
    ```bash
-   cp -R ~/miopds_common/examples pds
+   mkdir -p pds
    ```
 
-2. `pds/config/dataset_pwi_efd.json` の `collection` にある3つの値（`title`、`citation_description`、`collection_description`）を書き換えます。
+   次に、3つのディレクトリをコピーします。
+
+   ```bash
+   cp -R ~/miopds_common/label_templates ~/miopds_common/bash_wrapper ~/miopds_common/user_config pds/
+   ```
+
+   `pds/` の下に同じ名前のディレクトリがすでにあると、その中のファイルは上書きされます。
+   書き換えた `pds/user_config/` を上書きしないように注意してください。
+
+2. `pds/user_config/dataset_pwi_efd.json` の `collection` にある3つの値（`title`、`citation_description`、`collection_description`）を書き換えます。
    見本には `REPLACE_` で始まる仮の値が入っています。
    仮の値が残っていると、このファイルを `--dataset-config` に指定したコマンドは、次のエラーで止まります。
 
    ```text
-   ERROR: .../pds/config/dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced
+   ERROR: .../pds/user_config/dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced
    ```
 
    ほかの機器では、`instrument_*.json`、`dataset_*.json`、`authors_*.json` も機器に合わせて作ります。
-   各項目の意味は [examples/config/README_ja.md](examples/config/README_ja.md) にあります。
+   各項目の意味は [user_config/README_ja.md](user_config/README_ja.md) にあります。
 
 3. CDF を、Collection の月のディレクトリにコピーします。
    観測ラベルは CDF と同じディレクトリに作るので、CDF は `~/pds/` の下の月のディレクトリに置く必要があります。
@@ -206,15 +221,15 @@ instrument_repo/                          # 機器のリポジトリ（例）
    引数は、変換する表、書き出す期間表の順です。
    表の最後のフェーズが `msp` でないときは、そのフェーズの終わりがわからないので、エラーになります。
    その場合は、`--end` で終わりの日時を指定します。
-   表の形式と変換の決まりは、[examples/config/README_ja.md](examples/config/README_ja.md) の「.tab から変換する」にあります。
+   表の形式と変換の決まりは、[user_config/README_ja.md](user_config/README_ja.md) の「.tab から変換する」にあります。
 
 表が更新されたら、変換し直してください。
 内容が変わっていないときは、`mission_timeline.json` を書き換えません。
 
 ### shell スクリプトを使う準備
 
-A〜D の各手順は、Python のコマンドのほかに、`pds/scripts/` の shell スクリプトでも実行できます。
-shell スクリプトは、テンプレートと設定ファイルを `pds/templates/` と `pds/config/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
+A〜D の各手順は、Python のコマンドのほかに、`pds/bash_wrapper/` の shell スクリプトでも実行できます。
+shell スクリプトは、テンプレートと設定ファイルを `pds/label_templates/` と `pds/user_config/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
 Python のコマンドだけを使うときは、この節を飛ばしてください。
 
 shell スクリプトでは、期間表を環境変数 `MISSION_TIMELINE` で指定します。
@@ -230,7 +245,7 @@ export MISSION_TIMELINE=~/pds_config/mission_timeline.json
 ```
 
 観測ラベルのスクリプトを除き、shell スクリプトは作ったラベルを PDS Validate で検証します。
-PDS Validate は `~/local/pds/validate/bin/validate` から探します（インストールの手順は [examples/README_ja.md](examples/README_ja.md) の「PDS Validate 4.2.0 のインストール」）。
+PDS Validate は `~/local/pds/validate/bin/validate` から探します（インストールの手順は [bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「PDS Validate 4.2.0 のインストール」）。
 ほかの場所に置いたときは、環境変数 `VALIDATE_BIN` にその場所を指定します。
 PDS Validate をまだインストールしていないときは、次のコマンドで検証を省けます。
 
@@ -247,10 +262,10 @@ CDF ファイル1つから、観測ラベルを1つ作ります。
 ```bash
 python -m miopds_common cdf2pdslabel \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
+  pds/label_templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
-  --mission-config pds/config/mission.json \
-  --dataset-config pds/config/dataset_pwi_efd.json
+  --mission-config pds/user_config/mission.json \
+  --dataset-config pds/user_config/dataset_pwi_efd.json
 ```
 
 引数は、CDF ファイル、テンプレート、出力先のディレクトリの順です。
@@ -262,10 +277,10 @@ Collection の CDF ファイルをすべて処理するときは、`for` で1つ
 ```bash
 for cdf in ~/pds/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
-    pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
+    pds/label_templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
-    --mission-config pds/config/mission.json \
-    --dataset-config pds/config/dataset_pwi_efd.json
+    --mission-config pds/user_config/mission.json \
+    --dataset-config pds/user_config/dataset_pwi_efd.json
 done
 ```
 
@@ -283,28 +298,28 @@ done
 `make_pds_label_for_mmo_cdf_data.sh` で、CDF ファイル1つから観測ラベルを1つ作ります。
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates "" \
+  pds/label_templates "" \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | 順番 | 引数 | この例の値 |
 |---|---|---|
 | 1 | CDF ファイル | `~/pds/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
-| 2 | テンプレートのディレクトリ | `pds/templates` |
+| 2 | テンプレートのディレクトリ | `pds/label_templates` |
 | 3 | テンプレートの名前（`""` にすると `mmo_cdf_label_template_multi_dataset.xml.j2`） | `""` |
 | 4 | 出力先のディレクトリ | `~/pds/.../20270101_20270131` |
 
 5つ目以降の引数は、`cdf2pdslabel` のオプションとしてそのまま渡ります（例：`--mission-phase-name Cruise --mission-phase-id cruise`）。
-設定ファイルは `pds/config/mission.json` と `pds/config/dataset_pwi_efd.json` を読みます（環境変数 `MISSION_CONFIG` と `DATASET_CONFIG` で変えられます）。
+設定ファイルは `pds/user_config/mission.json` と `pds/user_config/dataset_pwi_efd.json` を読みます（環境変数 `MISSION_CONFIG` と `DATASET_CONFIG` で変えられます）。
 ミッションフェーズは、環境変数 `MISSION_TIMELINE` を指定したときは期間表から、指定しないときは `mission.json` の既定値から決まります。
 このスクリプトは検証をしません。
 
 Collection の CDF ファイルをすべて処理するときは、`make_all_pds_label_for_collection.sh` に Collection のディレクトリを渡します。
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 このスクリプトは、Collection の下のどのディレクトリにある CDF も探し、すべての観測ラベルを作り直します（Collection のラベルとインベントリは変えません）。
@@ -320,11 +335,11 @@ A で作った観測ラベルを集めて、データの Collection のラベル
 python -m miopds_common labels2collection \
   ~/pds/bc_mmo_pwi/data_calibrated_efd \
   ~/pds/bc_mmo_pwi/data_calibrated_efd \
-  pds/templates/collection_template.xml.j2 \
+  pds/label_templates/collection_template.xml.j2 \
   urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd \
   data_calibrated_efd \
-  --mission-config pds/config/mission.json \
-  --dataset-config pds/config/dataset_pwi_efd.json \
+  --mission-config pds/user_config/mission.json \
+  --dataset-config pds/user_config/dataset_pwi_efd.json \
   --publication-year 2027
 ```
 
@@ -332,7 +347,7 @@ python -m miopds_common labels2collection \
 |---|---|---|
 | 1 | 観測ラベルを探すディレクトリ（サブディレクトリの中も探す） | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
 | 2 | 出力先のディレクトリ | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
-| 3 | テンプレート | `pds/templates/collection_template.xml.j2` |
+| 3 | テンプレート | `pds/label_templates/collection_template.xml.j2` |
 | 4 | Collection の LID | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
 | 5 | 出力ファイルの名前（拡張子なし） | `data_calibrated_efd` |
 
@@ -346,7 +361,7 @@ CDF ファイルが見つからない観測ラベルは、警告を表示して�
 `create_psa_collection_jinja.sh` に Collection の名前を渡すと、Collection のラベルとインベントリを作り、Collection のラベルを検証します。
 
 ```bash
-COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/bash_wrapper/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡します。
@@ -364,10 +379,10 @@ B で Collection を作った後、Bundle のディレクトリの下にある C
 
 ```bash
 python -m miopds_common collections2bundle ~/pds/bc_mmo_pwi \
-  --template pds/templates/bundle_template.xml.j2 \
+  --template pds/label_templates/bundle_template.xml.j2 \
   --bundle-lid urn:jaxa:darts:bc_mmo_pwi \
-  --mission-config pds/config/mission.json \
-  --instrument-config pds/config/instrument_pwi.json \
+  --mission-config pds/user_config/mission.json \
+  --instrument-config pds/user_config/instrument_pwi.json \
   --publication-year 2027
 ```
 
@@ -381,15 +396,15 @@ Document を Bundle に入れるときは、Bundle を作る前に `create_psa_d
 `~/pds/bc_mmo_pwi/document/` にある PDF（既定は `bc_mmo_pwi_data_user_guide.pdf`）から、Document のラベルと Document Collection を作り、検証します。
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
+./pds/bash_wrapper/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
-PDF の名前や Document の題名は、環境変数で変えます（[examples/README_ja.md](examples/README_ja.md) の「Document」）。
+PDF の名前や Document の題名は、環境変数で変えます（[bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「Document」）。
 
 次に、`create_psa_bundle_jinja.sh` に Bundle のディレクトリを渡して、Bundle のラベルを作ります。
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 このスクリプトは、Bundle のラベルを作ったあと、Bundle 全体を PDS Validate で検証します（D の検証も、このスクリプトが行います）。
@@ -408,15 +423,15 @@ python -m miopds_common validate ~/pds/bc_mmo_pwi \
   --label-extension lblx
 ```
 
-`--validate-bin` には、PDS Validate の実行ファイルを指定します（この例は、`examples/README_ja.md` の手順でインストールした場所です）。
+`--validate-bin` には、PDS Validate の実行ファイルを指定します（この例は、`bash_wrapper/README_ja.md` の手順でインストールした場所です）。
 検証の後は、終了コードにかかわらずレポートを読んでください。
 理由は [docs/usage_ja.md](docs/usage_ja.md) の「既知の問題」にあります。
 
 ### まとめて実行する
 
-`pds/scripts/cron_mk_cdf_to_pds.sh`（miopds_common では `examples/scripts/cron_mk_cdf_to_pds.sh`）は、A から D までと Document の作成を順に実行し、入力が変わった製品だけを作り直します。
+`pds/bash_wrapper/cron_mk_cdf_to_pds.sh`（miopds_common では `bash_wrapper/cron_mk_cdf_to_pds.sh`）は、A から D までと Document の作成を順に実行し、入力が変わった製品だけを作り直します。
 cron で定期的に実行することを想定しています。
-使い方は [examples/README_ja.md](examples/README_ja.md) を見てください。
+使い方は [bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) を見てください。
 
 親スクリプトも、上の「shell スクリプトを使う準備」の `MISSION_TIMELINE` を指定したときだけ、期間表から観測ラベルのミッションフェーズを決めます。
 
@@ -425,6 +440,6 @@ cron で定期的に実行することを想定しています。
 | 文書 | 内容 |
 |---|---|
 | [docs/usage_ja.md](docs/usage_ja.md) | パッケージの手順書（サブコマンドとオプション、Python からの使い方、設定ファイル、検証、開発） |
-| [examples/README_ja.md](examples/README_ja.md) | shell スクリプトの引数、環境変数、出力 |
-| [examples/config/README_ja.md](examples/config/README_ja.md) | 設定ファイルの項目と、ラベルのどこに入るか |
+| [bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) | shell スクリプトの引数、環境変数、出力 |
+| [user_config/README_ja.md](user_config/README_ja.md) | 設定ファイルの項目と、ラベルのどこに入るか |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | git のブランチと、その運用（英語） |

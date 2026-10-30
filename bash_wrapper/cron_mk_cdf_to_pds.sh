@@ -55,15 +55,15 @@ BUNDLE_NAME="${BUNDLE_NAME:-${BUNDLE_DIR##*/}}"
 export REPORT_DIR="${REPORT_DIR:-./pds_chk_log}"
 export REPORT_TIMESTAMP="${REPORT_TIMESTAMP:-$(date '+%Y%m%d_%H%M%S')}"
 # Python that has miopds_common installed. It differs between servers
-# (python3 or python, venv path): set PYTHON for each server (../README.md).
+# (python3 or python, venv path): set PYTHON for each server (README.md).
 # Exported so that the child scripts use the same Python.
 # miopds_common をインストールした Python。サーバーごとに異なるので
-# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（../README.md）。
+# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（README.md）。
 # 子 shell も同じ Python を使うよう export する。
 export PYTHON="${PYTHON:-python3}"
 
-TEMPLATES_DIR="${TEMPLATES_DIR:-$SCRIPT_DIR/../templates}"
-CONFIG_DIR="${CONFIG_DIR:-$SCRIPT_DIR/../config}"
+TEMPLATES_DIR="${TEMPLATES_DIR:-$SCRIPT_DIR/../label_templates}"
+CONFIG_DIR="${CONFIG_DIR:-$SCRIPT_DIR/../user_config}"
 
 # Output names must match the child scripts' settings / 子 shell の設定と同じ名前にする
 PDF_FILE="${PDF_FILE:-bc_mmo_pwi_data_user_guide.pdf}"

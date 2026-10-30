@@ -1,10 +1,10 @@
-# Sample config files (examples/config)
+# Sample config files (user_config)
 
 [日本語](README_ja.md)
 
-`examples/config/` holds sample config files (JSON) used to make PDS4 labels.
-Copy them with `examples/` into the instrument repository (e.g. `pds/config/`),
-and adapt them to the instrument and dataset.
+`user_config/` holds sample config files (JSON) used to make PDS4 labels. Copy
+them into the instrument repository (e.g. `pds/user_config/`), and adapt them to
+the instrument and dataset.
 
 This document explains the meaning of each item in the config files, and which
 element of which label each value goes to.

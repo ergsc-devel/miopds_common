@@ -10,10 +10,16 @@ labels (one `.lblx` per CDF file), the Collection labels and inventories, the
 Document labels and the Bundle label, and validates them with NASA PDS
 Validate. It is meant for the archive staff of each Mio instrument.
 
-The repository has two parts. `miopds_common/` is the Python package installed
-by pip. `examples/` holds sample shell scripts, Jinja2 templates and config
-files (JSON). pip does not install `examples/`, so copy it into each instrument
-repository.
+The repository has four parts.
+
+| Directory | Contents | How to use |
+|---|---|---|
+| `miopds_common/` | The Python package | Install it with pip |
+| `label_templates/` | Jinja2 templates of the labels | Copy it into each instrument repository |
+| `bash_wrapper/` | Shell scripts that call the Python subcommands. `mio_examples/` holds examples made for the environment of a particular instrument, in a directory per instrument (e.g. `pwi_efd/`) | Copy it into each instrument repository |
+| `user_config/` | Sample config files (JSON), with the values for PWI-EFD | Copy it into each instrument repository, and edit it for the instrument |
+
+pip does not install `label_templates/`, `bash_wrapper/` or `user_config/`.
 
 ## Installation
 
@@ -51,7 +57,7 @@ This creates `~/miopds_common`.
 ### 3. Create a venv and install
 
 There are two ways to create the venv; use one of them. The examples below put
-the venv at `~/mio_pds_validate` (the same name as in `examples/README.md`).
+the venv at `~/mio_pds_validate` (the same name as in `bash_wrapper/README.md`).
 
 With the standard venv of Python, run these three commands in order:
 
@@ -86,7 +92,7 @@ uv pip install --python ~/mio_pds_validate/bin/python ~/miopds_common
 and `pip` in that terminal are the ones in the venv. Run it again whenever you
 open a new terminal. cron does not activate the venv; to give the Python for
 cron, see "Choosing the Python on each server" in
-[examples/README.md](examples/README.md).
+[bash_wrapper/README.md](bash_wrapper/README.md).
 
 ### 4. Check the installation
 
@@ -105,14 +111,15 @@ See "Development" in [docs/usage.md](docs/usage.md).
 
 PDS Validate (the Java tool for validation) is needed only for validation. For
 its installation, see "Installing PDS Validate 4.2.0" in
-[examples/README.md](examples/README.md).
+[bash_wrapper/README.md](bash_wrapper/README.md).
 
 ## Quick start
 
 ### Preparation
 
 Run the commands at the top of the instrument repository. The instrument
-repository holds a copy of `examples/` of miopds_common, named `pds/`. The data
+repository holds copies of `label_templates/`, `bash_wrapper/` and
+`user_config/` of miopds_common, in a directory named `pds/`. The data
 (the bundle directory) is kept outside the repository. The examples below put
 the bundle at `~/pds/bc_mmo_pwi/` and use the sample values for PWI-EFD
 (bundle `bc_mmo_pwi`, Collection `data_calibrated_efd`). For other
@@ -120,10 +127,10 @@ instruments, replace the names and locations with those of the instrument.
 
 ```text
 instrument_repo/                          # instrument repository (example)
-└── pds/                                  # copy of examples/ of miopds_common
-    ├── scripts/
-    ├── templates/
-    └── config/
+└── pds/
+    ├── bash_wrapper/                     # copy of bash_wrapper/ of miopds_common
+    ├── label_templates/                  # copy of label_templates/ of miopds_common
+    └── user_config/                      # copy of user_config/ of miopds_common (edit it)
 
 ~/pds/
 └── bc_mmo_pwi/                           # bundle directory
@@ -141,27 +148,36 @@ examples below). The name of a monthly directory is the first and last day of
 the month (e.g. `20270101_20270131`). The observational labels are written in
 the same directory as the CDF files.
 
-1. Copy `examples/` into the instrument repository as `pds/`. Run this while
-   `pds/` does not exist yet (if it exists, `pds/examples/` is created
-   instead).
+1. Copy `label_templates/`, `bash_wrapper/` and `user_config/` into `pds/` of
+   the instrument repository. First, make `pds/` (`mkdir -p` does nothing if
+   the directory already exists).
 
    ```bash
-   cp -R ~/miopds_common/examples pds
+   mkdir -p pds
    ```
 
+   Then, copy the three directories.
+
+   ```bash
+   cp -R ~/miopds_common/label_templates ~/miopds_common/bash_wrapper ~/miopds_common/user_config pds/
+   ```
+
+   If `pds/` already has a directory with the same name, the files in it are
+   overwritten. Take care not to overwrite your edited `pds/user_config/`.
+
 2. Replace the three values under `collection` in
-   `pds/config/dataset_pwi_efd.json` (`title`, `citation_description` and
+   `pds/user_config/dataset_pwi_efd.json` (`title`, `citation_description` and
    `collection_description`). The sample has placeholder values that start with
    `REPLACE_`. If one is left, a command given this file with
    `--dataset-config` stops with this error:
 
    ```text
-   ERROR: .../pds/config/dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced
+   ERROR: .../pds/user_config/dataset_pwi_efd.json.collection.title: placeholder 'REPLACE_COLLECTION_TITLE' must be replaced
    ```
 
    For other instruments, also write `instrument_*.json`, `dataset_*.json` and
    `authors_*.json` for the instrument. The meaning of each item is in
-   [examples/config/README.md](examples/config/README.md).
+   [user_config/README.md](user_config/README.md).
 
 3. Copy the CDF files into the monthly directory of the Collection. The
    observational labels are written in the same directory as the CDF files, so
@@ -231,7 +247,7 @@ example).
    order. If the last phase in the table is not `msp`, its end is unknown and
    the command fails. In that case, give the end time with `--end`. For the
    table format and the conversion rules, see "Converting from .tab" in
-   [examples/config/README.md](examples/config/README.md).
+   [user_config/README.md](user_config/README.md).
 
 When the table is updated, convert it again. If the content has not changed,
 `mission_timeline.json` is not rewritten.
@@ -239,8 +255,8 @@ When the table is updated, convert it again. If the content has not changed,
 ### Preparing to use the shell scripts
 
 Each step from A to D can also be run with the shell scripts in
-`pds/scripts/`, not only with the Python commands. The shell scripts read the
-templates and config files from `pds/templates/` and `pds/config/`, and save
+`pds/bash_wrapper/`, not only with the Python commands. The shell scripts read the
+templates and config files from `pds/label_templates/` and `pds/user_config/`, and save
 the validation reports in `pds_chk_log/` in the repository. If you use only
 the Python commands, skip this section.
 
@@ -260,7 +276,7 @@ export MISSION_TIMELINE=~/pds_config/mission_timeline.json
 Except for the observational label script, the shell scripts validate the
 labels they make with PDS Validate. They look for PDS Validate at
 `~/local/pds/validate/bin/validate` (for the installation, see "Installing PDS
-Validate 4.2.0" in [examples/README.md](examples/README.md)). If you put it
+Validate 4.2.0" in [bash_wrapper/README.md](bash_wrapper/README.md)). If you put it
 somewhere else, give that location in the environment variable
 `VALIDATE_BIN`. If PDS Validate is not installed yet, skip the validation with
 this command:
@@ -278,10 +294,10 @@ Make one observational label from one CDF file.
 ```bash
 python -m miopds_common cdf2pdslabel \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
+  pds/label_templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131 \
-  --mission-config pds/config/mission.json \
-  --dataset-config pds/config/dataset_pwi_efd.json
+  --mission-config pds/user_config/mission.json \
+  --dataset-config pds/user_config/dataset_pwi_efd.json
 ```
 
 The arguments are the CDF file, the template and the output directory, in this
@@ -295,10 +311,10 @@ To process all the CDF files of the Collection, repeat the command with `for`.
 ```bash
 for cdf in ~/pds/bc_mmo_pwi/data_calibrated_efd/*/*/*/*.cdf; do
   python -m miopds_common cdf2pdslabel "$cdf" \
-    pds/templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
+    pds/label_templates/mmo_cdf_label_template_multi_dataset.xml.j2 \
     "$(dirname "$cdf")" \
-    --mission-config pds/config/mission.json \
-    --dataset-config pds/config/dataset_pwi_efd.json
+    --mission-config pds/user_config/mission.json \
+    --dataset-config pds/user_config/dataset_pwi_efd.json
 done
 ```
 
@@ -320,22 +336,22 @@ in [docs/usage.md](docs/usage.md).
 CDF file.
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates "" \
+  pds/label_templates "" \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
 | Order | Argument | Value in this example |
 |---|---|---|
 | 1 | CDF file | `~/pds/.../bc_mmo_pwi-efd_l2_example_20270101_v01.cdf` |
-| 2 | Template directory | `pds/templates` |
+| 2 | Template directory | `pds/label_templates` |
 | 3 | Template name (`""` means `mmo_cdf_label_template_multi_dataset.xml.j2`) | `""` |
 | 4 | Output directory | `~/pds/.../20270101_20270131` |
 
 Arguments after the fourth are passed to `cdf2pdslabel` as options (e.g.
 `--mission-phase-name Cruise --mission-phase-id cruise`). The script reads the
-config files `pds/config/mission.json` and `pds/config/dataset_pwi_efd.json`
+config files `pds/user_config/mission.json` and `pds/user_config/dataset_pwi_efd.json`
 (change them with the environment variables `MISSION_CONFIG` and
 `DATASET_CONFIG`). The mission phase comes from the timeline when the
 environment variable `MISSION_TIMELINE` is set, and from the defaults in
@@ -345,7 +361,7 @@ To process all the CDF files of the Collection, give the Collection directory
 to `make_all_pds_label_for_collection.sh`.
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 This script finds the CDF files in any directory under the Collection, and
@@ -364,11 +380,11 @@ of the data Collection.
 python -m miopds_common labels2collection \
   ~/pds/bc_mmo_pwi/data_calibrated_efd \
   ~/pds/bc_mmo_pwi/data_calibrated_efd \
-  pds/templates/collection_template.xml.j2 \
+  pds/label_templates/collection_template.xml.j2 \
   urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd \
   data_calibrated_efd \
-  --mission-config pds/config/mission.json \
-  --dataset-config pds/config/dataset_pwi_efd.json \
+  --mission-config pds/user_config/mission.json \
+  --dataset-config pds/user_config/dataset_pwi_efd.json \
   --publication-year 2027
 ```
 
@@ -376,7 +392,7 @@ python -m miopds_common labels2collection \
 |---|---|---|
 | 1 | Directory searched for observational labels (subdirectories included) | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
 | 2 | Output directory | `~/pds/bc_mmo_pwi/data_calibrated_efd` |
-| 3 | Template | `pds/templates/collection_template.xml.j2` |
+| 3 | Template | `pds/label_templates/collection_template.xml.j2` |
 | 4 | Collection LID | `urn:jaxa:darts:bc_mmo_pwi:data_calibrated_efd` |
 | 5 | Output file name without extension | `data_calibrated_efd` |
 
@@ -395,7 +411,7 @@ Give the Collection name to `create_psa_collection_jinja.sh`. It makes the
 label and inventory of the Collection, and validates the Collection label.
 
 ```bash
-COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/bash_wrapper/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 The Collection directory is given in the environment variable
@@ -417,10 +433,10 @@ bundle directory and make the Bundle label.
 
 ```bash
 python -m miopds_common collections2bundle ~/pds/bc_mmo_pwi \
-  --template pds/templates/bundle_template.xml.j2 \
+  --template pds/label_templates/bundle_template.xml.j2 \
   --bundle-lid urn:jaxa:darts:bc_mmo_pwi \
-  --mission-config pds/config/mission.json \
-  --instrument-config pds/config/instrument_pwi.json \
+  --mission-config pds/user_config/mission.json \
+  --instrument-config pds/user_config/instrument_pwi.json \
   --publication-year 2027
 ```
 
@@ -437,17 +453,17 @@ making the Bundle. From the PDF in `~/pds/bc_mmo_pwi/document/` (by default
 Document Collection, and validates them.
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
+./pds/bash_wrapper/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 Change the PDF name and the Document title with environment variables (see
-"Document" in [examples/README.md](examples/README.md)).
+"Document" in [bash_wrapper/README.md](bash_wrapper/README.md)).
 
 Then give the bundle directory to `create_psa_bundle_jinja.sh` to make the
 Bundle label.
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 After making the Bundle label, this script validates the whole Bundle with PDS
@@ -470,16 +486,16 @@ python -m miopds_common validate ~/pds/bc_mmo_pwi \
 ```
 
 Give the PDS Validate executable to `--validate-bin` (the example is the
-location used in the installation steps of `examples/README.md`). After the
+location used in the installation steps of `bash_wrapper/README.md`). After the
 validation, read the report whatever the exit status is. The reason is in
 "Known issues" in [docs/usage.md](docs/usage.md).
 
 ### Run everything
 
-`pds/scripts/cron_mk_cdf_to_pds.sh` (`examples/scripts/cron_mk_cdf_to_pds.sh`
+`pds/bash_wrapper/cron_mk_cdf_to_pds.sh` (`bash_wrapper/cron_mk_cdf_to_pds.sh`
 in miopds_common) runs A to D and the Document step in
 order, and rebuilds only the products whose inputs have changed. It is meant to
-be run regularly by cron. See [examples/README.md](examples/README.md).
+be run regularly by cron. See [bash_wrapper/README.md](bash_wrapper/README.md).
 
 The parent script also takes the mission phase of the observational labels
 from the timeline only when `MISSION_TIMELINE` is set as in "Preparing to use
@@ -490,6 +506,6 @@ the shell scripts" above.
 | Document | Contents |
 |---|---|
 | [docs/usage.md](docs/usage.md) | Package guide: subcommands and options, Python usage, config files, validation, development |
-| [examples/README.md](examples/README.md) | Shell scripts: arguments, environment variables and outputs |
-| [examples/config/README.md](examples/config/README.md) | Config files and where each value goes in the labels |
+| [bash_wrapper/README.md](bash_wrapper/README.md) | Shell scripts: arguments, environment variables and outputs |
+| [user_config/README.md](user_config/README.md) | Config files and where each value goes in the labels |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Git branches and their policies |

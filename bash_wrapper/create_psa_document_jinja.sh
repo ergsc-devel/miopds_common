@@ -8,8 +8,8 @@
 # Usage / 使い方:
 #   create_psa_document_jinja.sh [DOCUMENT_DIR]
 #
-# Other settings are environment variables (see ../README.md).
-# その他の設定は環境変数で変更する（../README.md を参照）。
+# Other settings are environment variables (see README.md).
+# その他の設定は環境変数で変更する（README.md を参照）。
 #
 set -euo pipefail
 
@@ -39,10 +39,10 @@ COLLECTION_OUTPUT="${COLLECTION_OUTPUT:-collection_bc_mmo_pwi_document.lblx}"
 INVENTORY_OUTPUT="${INVENTORY_OUTPUT:-${COLLECTION_OUTPUT%.lblx}.csv}"
 
 # Templates and config files / テンプレートと設定ファイル
-DOCUMENT_TEMPLATE="${DOCUMENT_TEMPLATE:-$SCRIPT_DIR/../templates/document_template.xml.j2}"
-COLLECTION_TEMPLATE="${COLLECTION_TEMPLATE:-$SCRIPT_DIR/../templates/document_collection_template.xml.j2}"
-MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../config/mission.json}"
-INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-$SCRIPT_DIR/../config/instrument_pwi.json}"
+DOCUMENT_TEMPLATE="${DOCUMENT_TEMPLATE:-$SCRIPT_DIR/../label_templates/document_template.xml.j2}"
+COLLECTION_TEMPLATE="${COLLECTION_TEMPLATE:-$SCRIPT_DIR/../label_templates/document_collection_template.xml.j2}"
+MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../user_config/mission.json}"
+INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-$SCRIPT_DIR/../user_config/instrument_pwi.json}"
 
 # -- Reports and PDS Validate / レポートと PDS Validate ---------------------------
 REPORT_DIR="${REPORT_DIR:-./pds_chk_log}"
@@ -54,9 +54,9 @@ VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
 
 # Python that has miopds_common installed. It differs between servers
-# (python3 or python, venv path): set PYTHON for each server (../README.md).
+# (python3 or python, venv path): set PYTHON for each server (README.md).
 # miopds_common をインストールした Python。サーバーごとに異なるので
-# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（../README.md）。
+# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（README.md）。
 PYTHON="${PYTHON:-python3}"
 
 # -- Checks / 事前確認 ------------------------------------------------------------

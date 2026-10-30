@@ -27,8 +27,8 @@ TEMPLATE_NAME="${3:-mmo_cdf_label_template_multi_dataset.xml.j2}"
 OUTPUT_DIR="${4:?$USAGE}"
 
 # Config files / 設定ファイル
-MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../config/mission.json}"
-DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../config/dataset_pwi_efd.json}"
+MISSION_CONFIG="${MISSION_CONFIG:-$SCRIPT_DIR/../user_config/mission.json}"
+DATASET_CONFIG="${DATASET_CONFIG:-$SCRIPT_DIR/../user_config/dataset_pwi_efd.json}"
 
 # Timeline (optional) / 期間表（任意）
 MISSION_TIMELINE="${MISSION_TIMELINE:-}"
@@ -38,9 +38,9 @@ if [[ -n "$MISSION_TIMELINE" ]]; then
 fi
 
 # Python that has miopds_common installed. It differs between servers
-# (python3 or python, venv path): set PYTHON for each server (../README.md).
+# (python3 or python, venv path): set PYTHON for each server (README.md).
 # miopds_common をインストールした Python。サーバーごとに異なるので
-# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（../README.md）。
+# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（README.md）。
 PYTHON="${PYTHON:-python3}"
 
 # Check with the same Python that runs the jobs

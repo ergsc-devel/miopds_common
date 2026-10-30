@@ -18,8 +18,8 @@ from miopds_common._cli import label_main
 from miopds_common._config import ConfigError, MissionPhase
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "examples" / "config"
-TEMPLATES = ROOT / "examples" / "templates"
+CONFIG = ROOT / "user_config"
+TEMPLATES = ROOT / "label_templates"
 TEMPLATE = TEMPLATES / "mmo_cdf_label_template_multi_dataset.xml.j2"
 
 NS = {"pds": "http://pds.nasa.gov/pds4/pds/v1", "psa": "http://psa.esa.int/psa/v1"}

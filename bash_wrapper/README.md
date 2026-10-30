@@ -1,11 +1,12 @@
-# Sample shell scripts and templates (examples)
+# Shell scripts (bash_wrapper)
 
 [日本語](README_ja.md)
 
-`examples/` is a set of samples for making the PSA/PDS4 archive with
-miopds_common. It holds shell scripts, Jinja2 templates and config files
-(JSON). Copy it into each instrument repository (e.g. `instrument_repo`) under
-the name `pds/`, and adapt it to the instrument.
+`bash_wrapper/` holds shell scripts that make the PSA/PDS4 archive by calling
+the Python subcommands of miopds_common. The templates that the scripts use
+are in `label_templates/`, and the config files (JSON) are in `user_config/`.
+Copy the three directories into `pds/` of each instrument repository (e.g.
+`instrument_repo`).
 
 This document is a reference for the arguments, environment variables and
 outputs of each script. For the steps to run everything from the beginning,
@@ -21,33 +22,36 @@ instrument after copying.
 ## Contents
 
 ```text
-examples/
-├── scripts/     # shell scripts
-├── templates/   # Jinja2 templates (*.xml.j2)
-└── config/      # config files (*.json)
+pds/                     # in the instrument repository (at the top of miopds_common)
+├── bash_wrapper/        # shell scripts (this document)
+│   └── mio_examples/    # examples made for the environment of a particular instrument
+│       └── pwi_efd/     # examples for PWI-EFD
+├── label_templates/     # Jinja2 templates (*.xml.j2)
+└── user_config/         # config files (*.json)
 ```
 
 | File | Purpose |
 |---|---|
-| `scripts/make_pds_label_for_mmo_cdf_data.sh` | Makes one observational label (`.lblx`) from one CDF file |
-| `scripts/make_all_pds_label_for_collection.sh` | Makes the observational labels from all the CDF files of one Collection |
-| `scripts/create_psa_collection_jinja.sh` | Makes the label and inventory of a data Collection, and validates them |
-| `scripts/create_psa_document_jinja.sh` | Makes the Document label and the Document Collection, and validates them |
-| `scripts/create_psa_bundle_jinja.sh` | Makes the Bundle label, and validates the whole Bundle |
-| `scripts/cron_mk_cdf_to_pds.sh` | Calls the four scripts above in order, and rebuilds only the products whose inputs have changed (meant to be run regularly by cron) |
-| `templates/mmo_cdf_label_template_multi_dataset.xml.j2` | Template of the observational label |
-| `templates/collection_template.xml.j2` | Template of the data Collection label |
-| `templates/document_template.xml.j2` | Template of the Document label |
-| `templates/document_collection_template.xml.j2` | Template of the Document Collection label |
-| `templates/bundle_template.xml.j2` | Template of the Bundle label |
-| `config/mission.json` | Mission settings (shared by all Mio instruments) |
-| `config/instrument_pwi.json` | Instrument settings (filled in for PWI) |
-| `config/dataset_pwi_efd.json` | Dataset settings (filled in for PWI-EFD; replace the `REPLACE_` values before use) |
-| `config/authors_pwi_efd.json` | Author list (filled in for PWI-EFD) |
-| `config/authors_instrument_example.json` | Blank author list to start from |
-| `config/README.md`, `config/README_ja.md` | The items of the config files, and where each value goes in the labels (English, Japanese) |
+| `bash_wrapper/make_pds_label_for_mmo_cdf_data.sh` | Makes one observational label (`.lblx`) from one CDF file |
+| `bash_wrapper/make_all_pds_label_for_collection.sh` | Makes the observational labels from all the CDF files of one Collection |
+| `bash_wrapper/create_psa_collection_jinja.sh` | Makes the label and inventory of a data Collection, and validates them |
+| `bash_wrapper/create_psa_document_jinja.sh` | Makes the Document label and the Document Collection, and validates them |
+| `bash_wrapper/create_psa_bundle_jinja.sh` | Makes the Bundle label, and validates the whole Bundle |
+| `bash_wrapper/cron_mk_cdf_to_pds.sh` | Calls the four scripts above in order, and rebuilds only the products whose inputs have changed (meant to be run regularly by cron) |
+| `bash_wrapper/mio_examples/pwi_efd/make_pds_labels_simple.sh` | An example that makes the observational labels of the CDF files in a given directory, in another directory. It has paths for one particular environment, so edit them before use |
+| `label_templates/mmo_cdf_label_template_multi_dataset.xml.j2` | Template of the observational label |
+| `label_templates/collection_template.xml.j2` | Template of the data Collection label |
+| `label_templates/document_template.xml.j2` | Template of the Document label |
+| `label_templates/document_collection_template.xml.j2` | Template of the Document Collection label |
+| `label_templates/bundle_template.xml.j2` | Template of the Bundle label |
+| `user_config/mission.json` | Mission settings (shared by all Mio instruments) |
+| `user_config/instrument_pwi.json` | Instrument settings (filled in for PWI) |
+| `user_config/dataset_pwi_efd.json` | Dataset settings (filled in for PWI-EFD; replace the `REPLACE_` values before use) |
+| `user_config/authors_pwi_efd.json` | Author list (filled in for PWI-EFD) |
+| `user_config/authors_instrument_example.json` | Blank author list to start from |
+| `user_config/README.md`, `user_config/README_ja.md` | The items of the config files, and where each value goes in the labels (English, Japanese) |
 
-For how to write the config files, see [config/README.md](config/README.md).
+For how to write the config files, see [../user_config/README.md](../user_config/README.md).
 
 ## Preparation
 
@@ -68,7 +72,7 @@ give the Python that has miopds_common installed in one of these ways.
 | How you run the scripts | How to give the Python |
 |---|---|
 | By hand | Activate the venv (`source ~/mio_pds_validate/bin/activate`), or run `export PYTHON=~/mio_pds_validate/bin/python` |
-| Only once | Write it before the command, as in `PYTHON=~/mio_pds_validate/bin/python ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` |
+| Only once | Write it before the command, as in `PYTHON=~/mio_pds_validate/bin/python ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` |
 | By cron | Write `PYTHON=$HOME/mio_pds_validate/bin/python` in the crontab line. This is always needed: cron does not activate the venv, and its PATH is minimal |
 | Fixed in the instrument repository | In the copied scripts, replace `python3` in `PYTHON="${PYTHON:-python3}"` with the absolute path of the Python on that server |
 
@@ -76,7 +80,7 @@ An example of a crontab line (the paths are examples; change them for the
 server):
 
 ```bash
-0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/scripts/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
+0 3 * * * PYTHON=$HOME/mio_pds_validate/bin/python $HOME/instrument_repo/pds/bash_wrapper/cron_mk_cdf_to_pds.sh $HOME/pds/bc_mmo_pwi >> $HOME/pds_chk_log/cron.log 2>&1
 ```
 
 To check that the Python you gave has miopds_common installed, run:
@@ -161,7 +165,7 @@ the scripts print a warning and continue the validation without the catalog.
 ## Rules common to the scripts
 
 - The scripts look for the templates and config files by paths relative to the
-  script (`../templates/`, `../config/`).
+  script (`../label_templates/`, `../user_config/`).
 - They save the validation reports by a path relative to where you run them
   (`./pds_chk_log/` by default).
 - Except for the observational label script, they validate the labels they
@@ -185,7 +189,7 @@ All the scripts use these environment variables:
 An example that skips the validation:
 
 ```bash
-VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+VALIDATE_ENABLED=0 ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ## Scripts
@@ -208,7 +212,7 @@ Makes one observational label from one CDF file. This script does not
 validate.
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]
 ```
 
 | Argument | Meaning |
@@ -222,8 +226,8 @@ validate.
 | Environment variable | Meaning | Default |
 |---|---|---|
 | `MISSION_TIMELINE` | Timeline file (optional; when set, the mission phase is taken from the timeline) | None |
-| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
-| `DATASET_CONFIG` | Dataset config file (the instrument and author config files are read from the paths written in it) | `config/dataset_pwi_efd.json` |
+| `MISSION_CONFIG` | Mission config file | `user_config/mission.json` |
+| `DATASET_CONFIG` | Dataset config file (the instrument and author config files are read from the paths written in it) | `user_config/dataset_pwi_efd.json` |
 
 The output is `OUTPUT_DIR/CDF file name.lblx` (the CDF file name with `.cdf`
 changed to `.lblx`). When `MISSION_TIMELINE` is set, the mission phase is that
@@ -237,9 +241,9 @@ make the timeline (`mission_timeline.json`), see "Make the timeline" in
 An example:
 
 ```bash
-./pds/scripts/make_pds_label_for_mmo_cdf_data.sh \
+./pds/bash_wrapper/make_pds_label_for_mmo_cdf_data.sh \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131/bc_mmo_pwi-efd_l2_example_20270101_v01.cdf \
-  pds/templates "" \
+  pds/label_templates "" \
   ~/pds/bc_mmo_pwi/data_calibrated_efd/mercury_science_orbit/data_type/20270101_20270131
 ```
 
@@ -254,7 +258,7 @@ label is made again. It does not change the Collection label and inventory
 validate.
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh COLLECTION_DIR [OPTIONS...]
 ```
 
 | Argument | Meaning |
@@ -264,7 +268,7 @@ validate.
 
 | Environment variable | Meaning | Default |
 |---|---|---|
-| `TEMPLATES_DIR` | Template directory | `templates/` |
+| `TEMPLATES_DIR` | Template directory | `label_templates/` |
 
 `MISSION_CONFIG`, `DATASET_CONFIG` and `MISSION_TIMELINE` are passed on to the
 observational label script as they are (see the observational label section
@@ -278,7 +282,7 @@ file. At the end, labels without their CDF files are reported as warnings
 An example:
 
 ```bash
-./pds/scripts/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
+./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_pwi/data_calibrated_efd
 ```
 
 ### Collection: `create_psa_collection_jinja.sh`
@@ -287,7 +291,7 @@ Makes the label and inventory of a data Collection, and validates the
 Collection label.
 
 ```bash
-./pds/scripts/create_psa_collection_jinja.sh [COLLECTION_NAME]
+./pds/bash_wrapper/create_psa_collection_jinja.sh [COLLECTION_NAME]
 ```
 
 `COLLECTION_NAME` is the name of the Collection (default
@@ -296,7 +300,7 @@ Collection directory is given in the environment variable `COLLECTION_DIR`.
 An example:
 
 ```bash
-COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/scripts/create_psa_collection_jinja.sh data_calibrated_efd
+COLLECTION_DIR=~/pds/bc_mmo_pwi/data_calibrated_efd ./pds/bash_wrapper/create_psa_collection_jinja.sh data_calibrated_efd
 ```
 
 Without `COLLECTION_DIR`, the script uses
@@ -310,9 +314,9 @@ Without `COLLECTION_DIR`, the script uses
 | `LABEL_DIR` | Directory searched for observational labels (subdirectories included) | `$COLLECTION_DIR` |
 | `COLLECTION_LID` | Collection LID | `urn:jaxa:darts:$BUNDLE_NAME:$COLLECTION_NAME` |
 | `OUTPUT_BASE` | Output file name without extension | `$COLLECTION_NAME` |
-| `TEMPLATE_FILE` | Template | `templates/collection_template.xml.j2` |
-| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
-| `DATASET_CONFIG` | Dataset config file | `config/dataset_pwi_efd.json` |
+| `TEMPLATE_FILE` | Template | `label_templates/collection_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `user_config/mission.json` |
+| `DATASET_CONFIG` | Dataset config file | `user_config/dataset_pwi_efd.json` |
 | `MISSION_TIMELINE` | Timeline file (optional; only when it is set, the script checks that it is valid JSON; it is not used for the Collection) | None |
 | `PUBLICATION_YEAR` | Publication year | `2027` |
 | `VERSION_ID` | Collection version | `1.0` |
@@ -336,7 +340,7 @@ Makes the Document label and the Document Collection (label and inventory)
 from a PDF, and validates the two labels.
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh [DOCUMENT_DIR]
+./pds/bash_wrapper/create_psa_document_jinja.sh [DOCUMENT_DIR]
 ```
 
 `DOCUMENT_DIR` is the directory of the PDF (default `bc_mmo_pwi/document`).
@@ -357,10 +361,10 @@ from a PDF, and validates the two labels.
 | `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection label name (`.lblx`) | `collection_bc_mmo_pwi_document.lblx` |
 | `INVENTORY_OUTPUT` | Inventory name (must be the `COLLECTION_OUTPUT` name with `.lblx` changed to `.csv`) | `collection_bc_mmo_pwi_document.csv` |
-| `DOCUMENT_TEMPLATE` | Document template | `templates/document_template.xml.j2` |
-| `COLLECTION_TEMPLATE` | Document Collection template | `templates/document_collection_template.xml.j2` |
-| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
-| `INSTRUMENT_CONFIG` | Instrument config file | `config/instrument_pwi.json` |
+| `DOCUMENT_TEMPLATE` | Document template | `label_templates/document_template.xml.j2` |
+| `COLLECTION_TEMPLATE` | Document Collection template | `label_templates/document_collection_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `user_config/mission.json` |
+| `INSTRUMENT_CONFIG` | Instrument config file | `user_config/instrument_pwi.json` |
 | `DOCUMENT_REPORT` | File for the validation of the Document label | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_validate_report.txt` |
 | `COLLECTION_REPORT` | File for the validation of the Document Collection label | `$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_pwi_document_collection_validate_report.txt` |
 
@@ -375,7 +379,7 @@ and the mission name and the Information Model version from `MISSION_CONFIG`.
 An example:
 
 ```bash
-./pds/scripts/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
+./pds/bash_wrapper/create_psa_document_jinja.sh ~/pds/bc_mmo_pwi/document
 ```
 
 ### Bundle: `create_psa_bundle_jinja.sh`
@@ -384,7 +388,7 @@ Collects the Collection labels under the bundle directory, makes the Bundle
 label, and validates the whole Bundle.
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh [BUNDLE_DIR]
+./pds/bash_wrapper/create_psa_bundle_jinja.sh [BUNDLE_DIR]
 ```
 
 `BUNDLE_DIR` is the bundle directory (default `bc_mmo_pwi`).
@@ -397,9 +401,9 @@ label, and validates the whole Bundle.
 | `PUBLICATION_YEAR` | Publication year | `2027` |
 | `MODIFICATION_DATE` | Modification date (`YYYY-MM-DD`) | The day of the run (UTC) |
 | `OUTPUT_FILE` | Bundle label name | `$BUNDLE_NAME.lblx` |
-| `TEMPLATE_FILE` | Template | `templates/bundle_template.xml.j2` |
-| `MISSION_CONFIG` | Mission config file | `config/mission.json` |
-| `INSTRUMENT_CONFIG` | Instrument config file | `config/instrument_pwi.json` |
+| `TEMPLATE_FILE` | Template | `label_templates/bundle_template.xml.j2` |
+| `MISSION_CONFIG` | Mission config file | `user_config/mission.json` |
+| `INSTRUMENT_CONFIG` | Instrument config file | `user_config/instrument_pwi.json` |
 | `BUNDLE_LABEL_EXTENSION` | Extension of the files that the validation treats as labels (empty: `xml`, the default of PDS Validate) | `lblx` |
 | `VALIDATE_REPORT` | File for PDS Validate's own report (`--report-file`) | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_report.txt` |
 | `VALIDATE_LOG` | File for what the validation printed | `$REPORT_DIR/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_bundle_validate_log.txt` |
@@ -414,7 +418,7 @@ the whole Bundle with `--rule pds4.bundle`.
 An example:
 
 ```bash
-./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 ### Run everything and rebuild only what changed: `cron_mk_cdf_to_pds.sh`
@@ -425,7 +429,7 @@ regularly, for example by cron, changes to the CDF files and the settings are
 carried over to the labels, the Collection and the Bundle.
 
 ```bash
-./pds/scripts/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
 ```
 
 | Argument | Meaning |
@@ -449,7 +453,7 @@ inputs is newer than the output:
 | Collection | Files and directories under the Collection directory (including added and removed ones) |
 | Document and Document Collection | The PDF (`PDF_FILE`) |
 | Bundle | The label of each Collection |
-| Every product | `templates/`, `config/`, `scripts/` and the Python code of miopds_common |
+| Every product | `label_templates/`, `user_config/`, `bash_wrapper/` and the Python code of miopds_common |
 
 Editing a template, a config file or a script rebuilds every product. The
 script starts Python once per CDF file for the observational labels, so it
@@ -470,9 +474,9 @@ Edit these two places in the script for the instrument:
 | `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection label name | `collection_bc_mmo_pwi_document.lblx` |
 | `OUTPUT_FILE` | Bundle label name | The last part of `BUNDLE_DIR` + `.lblx` |
-| `DATASET_CONFIG` | Dataset config file of the data Collection | `config/dataset_pwi_efd.json` |
-| `TEMPLATES_DIR` | Template directory | `templates/` |
-| `CONFIG_DIR` | Config file directory | `config/` |
+| `DATASET_CONFIG` | Dataset config file of the data Collection | `user_config/dataset_pwi_efd.json` |
+| `TEMPLATES_DIR` | Template directory | `label_templates/` |
+| `CONFIG_DIR` | Config file directory | `user_config/` |
 | `LOCK_DIR` | Location of the lock | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
 
 The script runs by these rules:
@@ -494,4 +498,4 @@ The script runs by these rules:
 |---|---|
 | [../README.md](../README.md) | Installation, and the quick start that runs everything from the beginning |
 | [../docs/usage.md](../docs/usage.md) | Subcommands and options, Python usage, the `validate` subcommand, known issues |
-| [config/README.md](config/README.md) | The items of the config files, and where each value goes in the labels |
+| [../user_config/README.md](../user_config/README.md) | The items of the config files, and where each value goes in the labels |

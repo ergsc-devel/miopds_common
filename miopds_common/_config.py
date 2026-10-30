@@ -5,8 +5,8 @@ Every file is checked strictly: a missing required key, an unknown key (for
 example a typo) or a value of the wrong type raises ConfigError.
 必須項目の欠落、知らない項目（打ち間違いなど）、型の誤りはすべて ConfigError にする。
 
-See examples/config/README.md for the meaning of each item.
-各項目の意味は examples/config/README.md を参照。
+See user_config/README.md for the meaning of each item.
+各項目の意味は user_config/README.md を参照。
 """
 
 import json

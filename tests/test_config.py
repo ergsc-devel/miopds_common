@@ -18,7 +18,7 @@ from miopds_common._config import (
     load_authors,
 )
 
-EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "config"
+EXAMPLES = Path(__file__).resolve().parents[1] / "user_config"
 
 
 def _write_json(path: Path, data) -> Path:
@@ -26,7 +26,7 @@ def _write_json(path: Path, data) -> Path:
     return path
 
 
-# -- examples/config must stay loadable / 見本の設定ファイルは常に読めること ----
+# -- user_config must stay loadable / 見本の設定ファイルは常に読めること ----
 
 
 def test_example_mission_loads():

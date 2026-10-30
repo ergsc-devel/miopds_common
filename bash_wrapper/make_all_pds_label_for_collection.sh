@@ -31,13 +31,13 @@ COLLECTION_DIR="${1:?$USAGE}"
 COLLECTION_DIR="${COLLECTION_DIR%/}"
 shift
 
-TEMPLATES_DIR="${TEMPLATES_DIR:-$SCRIPT_DIR/../templates}"
+TEMPLATES_DIR="${TEMPLATES_DIR:-$SCRIPT_DIR/../label_templates}"
 
 # Python that has miopds_common installed. It differs between servers
-# (python3 or python, venv path): set PYTHON for each server (../README.md).
+# (python3 or python, venv path): set PYTHON for each server (README.md).
 # Exported so that the child script uses the same Python.
 # miopds_common をインストールした Python。サーバーごとに異なるので
-# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（../README.md）。
+# （python3 か python か、venv の場所）、サーバーごとに PYTHON を指定する（README.md）。
 # 子 shell も同じ Python を使うよう export する。
 export PYTHON="${PYTHON:-python3}"
 

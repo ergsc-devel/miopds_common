@@ -13,8 +13,8 @@ from miopds_common import collections2bundle
 from miopds_common._cli import bundle_main
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "examples" / "config"
-TEMPLATE = ROOT / "examples" / "templates" / "bundle_template.xml.j2"
+CONFIG = ROOT / "user_config"
+TEMPLATE = ROOT / "label_templates" / "bundle_template.xml.j2"
 BUNDLE_LID = "urn:jaxa:darts:bc_mmo_pwi"
 NS = {"pds": "http://pds.nasa.gov/pds4/pds/v1"}
 PDS = "http://pds.nasa.gov/pds4/pds/v1"
