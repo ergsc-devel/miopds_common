@@ -7,6 +7,7 @@ argparse はこのモジュールでだけ使う。各ツールは普通の clas
 
 import argparse
 import logging
+import shlex
 import sys
 from pathlib import Path
 
@@ -410,6 +411,13 @@ def validate_main(
     parser.add_argument("--catalog", help="XML catalog file (empty: none)")
     parser.add_argument("--rule", help='e.g. "pds4.bundle"')
     parser.add_argument("--label-extension", help='e.g. "lblx"')
+    parser.add_argument(
+        "--validate-option",
+        default="",
+        help="more options for Validate in one string, split as the shell does. "
+        'Join it with "=", as the value starts with "-": '
+        '--validate-option="-D --add-context-products context.json"',
+    )
     args = parser.parse_args(argv)
     _show_warnings()
     if args.report_file is not None and (
@@ -435,6 +443,7 @@ def validate_main(
             rule=args.rule,
             label_extension=args.label_extension,
             report_file=args.report_file,
+            extra_options=shlex.split(args.validate_option),
         )
     except Exception as error:
         print(f"ERROR: {error}", file=sys.stderr)

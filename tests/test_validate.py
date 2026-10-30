@@ -45,6 +45,20 @@ def test_argument_order(tmp_path):
     ]
 
 
+def test_extra_options_come_last(tmp_path):
+    validate = _fake_validate(tmp_path)
+    command = build_validate_command(
+        validate, "x.xml", rule="pds4.label",
+        extra_options=["-D", "--add-context-products", "context.json"],
+    )
+    assert command == [
+        str(validate),
+        "--rule", "pds4.label",
+        "--target", "x.xml",
+        "-D", "--add-context-products", "context.json",
+    ]
+
+
 def test_missing_catalog_is_left_out_with_a_warning(tmp_path):
     messages = []
     handler = logging.Handler()
@@ -126,5 +140,26 @@ def test_command_with_missing_validate(tmp_path):
     status = validate_main([
         "label.xml", "--report", str(tmp_path / "report.txt"),
         "--validate-bin", str(tmp_path / "no_such_validate"),
+    ])
+    assert status == 1
+
+
+def test_command_passes_validate_option(tmp_path, capsys):
+    # A quoted value with a space stays one argument / 引用符で囲んだ値は1つの引数のまま
+    status = validate_main([
+        "label.xml", "--report", str(tmp_path / "report.txt"),
+        "--validate-bin", str(_fake_validate(tmp_path)),
+        '--validate-option=-D --add-context-products "my context.json"',
+    ])
+    assert status == 0
+    output = capsys.readouterr().out
+    assert "-D --add-context-products 'my context.json'" in output
+
+
+def test_command_rejects_unclosed_quote_in_validate_option(tmp_path):
+    status = validate_main([
+        "label.xml", "--report", str(tmp_path / "report.txt"),
+        "--validate-bin", str(_fake_validate(tmp_path)),
+        '--validate-option=-D "unclosed',
     ])
     assert status == 1

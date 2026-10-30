@@ -18,7 +18,7 @@
 #
 # Optional environment overrides:
 #   ARCHIVE_ROOT, BUNDLE_NAME, COLLECTION_DIR, LABEL_DIR,
-#   MISSION_TIMELINE, PYTHON, VALIDATE_ENABLED
+#   MISSION_TIMELINE, PYTHON, VALIDATE_ENABLED, VALIDATE_OPTION
 #
 set -euo pipefail
 
@@ -68,6 +68,9 @@ SKIP_REPORT="${SKIP_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_${OUTPUT_BASE}_skipp
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"
 VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"
+# More options for PDS Validate, e.g. "-D --add-context-products context.json"
+# PDS Validate に足すオプション（例："-D --add-context-products context.json"）
+VALIDATE_OPTION="${VALIDATE_OPTION:-}"
 PYTHON="${PYTHON:-python3}"
 
 # -- Checks --------------------------------------------------------------------
@@ -166,4 +169,5 @@ fi
   --report "$VALIDATE_REPORT" \
   --validate-bin "$VALIDATE_BIN" \
   --catalog "$VALIDATE_CATALOG" \
-  --label-extension "lblx"
+  --label-extension "lblx" \
+  --validate-option="$VALIDATE_OPTION"

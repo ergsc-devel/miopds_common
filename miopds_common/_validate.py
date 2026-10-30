@@ -11,6 +11,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TextIO
 
@@ -25,6 +26,7 @@ def build_validate_command(
     rule: str | None = None,
     label_extension: str | None = None,
     report_file: Path | str | None = None,
+    extra_options: Sequence[str] = (),
 ) -> list[str]:
     """Return the Validate command line (same argument order as the old shells).
     Validate のコマンドラインを返す（引数の順番は以前の shell と同じ）。
@@ -33,6 +35,8 @@ def build_validate_command(
     means no catalog. report_file is Validate's own report (--report-file).
     存在しないカタログは警告を出して外す。空の値はカタログなしとみなす。
     report_file は Validate 自身が書くレポート（--report-file）。
+    extra_options are added at the end as they are (e.g. ["-D"]).
+    extra_options は、そのまま最後に足す（例：["-D"]）。
     """
     command = [_find_validate(validate_bin)]
     if rule:
@@ -51,6 +55,7 @@ def build_validate_command(
                 "validation will continue without --catalog.",
                 catalog,
             )
+    command += list(extra_options)
     return command
 
 
