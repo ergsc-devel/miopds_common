@@ -44,6 +44,9 @@ VALIDATE_LOG="${VALIDATE_LOG:-${REPORT_DIR}/${REPORT_TIMESTAMP}_${BUNDLE_NAME}_b
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"   # 0: skip validation / 0 なら検証しない
 VALIDATE_BIN="${VALIDATE_BIN:-${HOME}/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
+# More options for PDS Validate, e.g. "-D --add-context-products context.json"
+# PDS Validate に足すオプション（例："-D --add-context-products context.json"）
+VALIDATE_OPTION="${VALIDATE_OPTION:-}"
 # Label file extension for Validate ("": Validate's default, xml)
 # Validate に渡すラベルの拡張子（空なら Validate の既定の xml）
 BUNDLE_LABEL_EXTENSION="${BUNDLE_LABEL_EXTENSION-lblx}"
@@ -88,4 +91,5 @@ fi
     --report "${VALIDATE_LOG}" \
     --report-file "${VALIDATE_REPORT}" \
     --validate-bin "${VALIDATE_BIN}" \
-    --catalog "${VALIDATE_CATALOG}"
+    --catalog "${VALIDATE_CATALOG}" \
+    --validate-option="${VALIDATE_OPTION}"

@@ -52,6 +52,9 @@ COLLECTION_REPORT="${COLLECTION_REPORT:-$REPORT_DIR/${REPORT_TIMESTAMP}_bc_mmo_p
 VALIDATE_ENABLED="${VALIDATE_ENABLED:-1}"   # 0: skip validation / 0 なら検証しない
 VALIDATE_BIN="${VALIDATE_BIN:-$HOME/local/pds/validate/bin/validate}"
 VALIDATE_CATALOG="${VALIDATE_CATALOG-pds4-validate-catalog.xml}"   # "": no catalog / 空ならカタログなし
+# More options for PDS Validate, e.g. "-D --add-context-products context.json"
+# PDS Validate に足すオプション（例："-D --add-context-products context.json"）
+VALIDATE_OPTION="${VALIDATE_OPTION:-}"
 
 # Python that has miopds_common installed. It differs between servers
 # (python3 or python, venv path): set PYTHON for each server (../README.md).
@@ -100,8 +103,10 @@ fi
 "$PYTHON" -m miopds_common validate "$DOCUMENT_DIR/$DOCUMENT_OUTPUT" \
   --report "$DOCUMENT_REPORT" \
   --validate-bin "$VALIDATE_BIN" \
-  --catalog "$VALIDATE_CATALOG"
+  --catalog "$VALIDATE_CATALOG" \
+  --validate-option="$VALIDATE_OPTION"
 "$PYTHON" -m miopds_common validate "$DOCUMENT_DIR/$COLLECTION_OUTPUT" \
   --report "$COLLECTION_REPORT" \
   --validate-bin "$VALIDATE_BIN" \
-  --catalog "$VALIDATE_CATALOG"
+  --catalog "$VALIDATE_CATALOG" \
+  --validate-option="$VALIDATE_OPTION"
