@@ -179,6 +179,7 @@ All the scripts use these environment variables:
 | `VALIDATE_ENABLED` | `0` skips the validation | `1` |
 | `VALIDATE_BIN` | PDS Validate executable | `$HOME/local/pds/validate/bin/validate` |
 | `VALIDATE_CATALOG` | Path of the XML Catalog (empty: no catalog) | `pds4-validate-catalog.xml` |
+| `VALIDATE_OPTION` | More options for PDS Validate (split as the shell does) | Empty |
 | `REPORT_DIR` | Directory for the validation reports | `./pds_chk_log` |
 | `REPORT_TIMESTAMP` | Date and time in the report file names | The date and time of the run |
 
@@ -187,6 +188,17 @@ An example that skips the validation:
 ```bash
 VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
+
+An example that adds options for PDS Validate:
+
+```bash
+VALIDATE_OPTION="-D --add-context-products context.json" ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+```
+
+The options in `VALIDATE_OPTION` are added after the options that the script
+gives. Do not write options that the script gives, such as `--target` or
+`--rule`. For the meaning of the options, see the help of PDS Validate
+(`validate --help`).
 
 ## Scripts
 

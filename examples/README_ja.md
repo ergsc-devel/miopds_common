@@ -157,6 +157,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 | `VALIDATE_ENABLED` | `0` にすると検証を省く | `1` |
 | `VALIDATE_BIN` | PDS Validate の実行ファイル | `$HOME/local/pds/validate/bin/validate` |
 | `VALIDATE_CATALOG` | XML Catalog のパス（空にすると Catalog を使わない） | `pds4-validate-catalog.xml` |
+| `VALIDATE_OPTION` | PDS Validate に足すオプション（shell と同じ規則で区切る） | 空 |
 | `REPORT_DIR` | 検証のレポートの保存先 | `./pds_chk_log` |
 | `REPORT_TIMESTAMP` | レポートのファイル名に付ける日時 | 実行した日時 |
 
@@ -165,6 +166,16 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 ```bash
 VALIDATE_ENABLED=0 ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
+
+PDS Validate にオプションを足す例を示します。
+
+```bash
+VALIDATE_OPTION="-D --add-context-products context.json" ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+```
+
+`VALIDATE_OPTION` のオプションは、スクリプトが付けるオプションの後ろに足されます。
+`--target` や `--rule` のように、スクリプトが付けるオプションは書かないでください。
+オプションの意味は、PDS Validate の説明（`validate --help`）を見てください。
 
 ## 各スクリプト
 
