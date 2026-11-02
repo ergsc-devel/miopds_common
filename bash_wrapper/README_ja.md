@@ -11,8 +11,11 @@
 ディレクトリ構成も、クイックスタートの構成（Bundle をリポジトリの外の `~/pds/bc_mmo_pwi/` に置く）を前提にします。
 コマンドの例は、機器のリポジトリの一番上で実行するものとします。
 
-見本は、BepiColombo Mio PWI 向けの値（`bc_mmo_pwi` など）を既定値に持っています。
-ほかの機器では、コピーした後に機器の値へ書き換えてください。
+スクリプトは、機器ごとの値を設定ファイル `user_config/pipeline_settings.sh` から読みます（下の「機器の設定」）。
+そのため、スクリプトは書き換えません。
+機器のリポジトリで書き換えるのは `pds/user_config/` だけです。
+miopds_common が更新されたら、`pds/bash_wrapper/` と `pds/label_templates/` を新しいものに上書きします。
+`user_config/` の見本は、BepiColombo Mio PWI-EFD 向けの値（`bc_mmo_pwi` など）を持っているので、機器の値に書き換えてください。
 
 ## 中身
 
@@ -22,7 +25,7 @@ pds/                     # 機器のリポジトリの中（miopds_common では
 │   └── mio_examples/    # 特定の機器の環境に合わせた例
 │       └── pwi_efd/     # PWI-EFD の例
 ├── label_templates/     # Jinja2 テンプレート（*.xml.j2）
-└── user_config/         # 設定ファイル（*.json）
+└── user_config/         # 機器の設定ファイル（pipeline_settings.sh）と設定ファイル（*.json）
 ```
 
 | ファイル | 用途 |
@@ -33,12 +36,13 @@ pds/                     # 機器のリポジトリの中（miopds_common では
 | `bash_wrapper/create_psa_document_jinja.sh` | Document のラベルと Document Collection を作り、検証する |
 | `bash_wrapper/create_psa_bundle_jinja.sh` | Bundle のラベルを作り、Bundle 全体を検証する |
 | `bash_wrapper/cron_mk_cdf_to_pds.sh` | 上の4つを順に呼び、入力が変わった製品だけを作り直す（cron での定期実行を想定） |
-| `bash_wrapper/mio_examples/pwi_efd/make_pds_labels_simple.sh` | 指定したディレクトリの CDF の観測ラベルを、別のディレクトリに作る例。ある環境に合わせたパスが書かれているので、使うときは書き換える |
+| `bash_wrapper/mio_examples/pwi_efd/make_pds_labels_simple.sh` | 指定したディレクトリの CDF の観測ラベルを、別のディレクトリに作る例。ほかのスクリプトと同じく機器の設定ファイルを読む |
 | `label_templates/mmo_cdf_label_template_multi_dataset.xml.j2` | 観測ラベルのテンプレート |
 | `label_templates/collection_template.xml.j2` | データの Collection のラベルのテンプレート |
 | `label_templates/document_template.xml.j2` | Document のラベルのテンプレート |
 | `label_templates/document_collection_template.xml.j2` | Document Collection のラベルのテンプレート |
 | `label_templates/bundle_template.xml.j2` | Bundle のラベルのテンプレート |
+| `user_config/pipeline_settings.sh` | スクリプトが読む機器の設定（PWI-EFD の記入例） |
 | `user_config/mission.json` | ミッションの設定（すべての Mio の機器で共通） |
 | `user_config/instrument_pwi.json` | 機器の設定（PWI の記入例） |
 | `user_config/dataset_pwi_efd.json` | データセットの設定（PWI-EFD の記入例。`REPLACE_` の値を書き換えてから使う） |
@@ -66,8 +70,8 @@ Python のコマンドの名前（`python3` か `python` か）と venv の場�
 |---|---|
 | 手で実行する | venv を有効にする（`source ~/mio_pds_validate/bin/activate`）か、`export PYTHON=~/mio_pds_validate/bin/python` を実行する |
 | 1回だけ指定する | `PYTHON=~/mio_pds_validate/bin/python ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi` のように、コマンドの前に書く |
-| cron で実行する | crontab の行に `PYTHON=$HOME/mio_pds_validate/bin/python` を書く。cron は venv を有効にせず、PATH も最小限なので、この指定が必ず必要 |
-| 機器のリポジトリで固定する | コピーした shell の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
+| cron で実行する | crontab の行に `PYTHON=$HOME/mio_pds_validate/bin/python` を書くか、機器の設定ファイルに Python を書く。cron は venv を有効にせず、PATH も最小限なので、どちらかが必ず必要 |
+| 機器のリポジトリで固定する | 機器の設定ファイル `pds/user_config/pipeline_settings.sh` の `PYTHON="${PYTHON:-python3}"` の `python3` を、そのサーバーの Python の絶対パスに書き換える |
 
 crontab の行の例を示します（パスは例です。サーバーに合わせて書き換えてください）。
 
@@ -82,6 +86,30 @@ crontab の行の例を示します（パスは例です。サーバーに合わ
 ```
 
 入っていない Python を指定すると、スクリプトは `ERROR: miopds_common is not installed for python3`（`python3` の部分は指定した Python）と表示して止まります。
+
+### 機器の設定：`pipeline_settings.sh`
+
+どのスクリプトも、始めに機器の設定ファイルを `source` で読みます。
+このファイルの既定の場所は、スクリプトの場所からの相対パスで `../user_config/pipeline_settings.sh` です。ほかのファイルを使うときは、環境変数 `PIPELINE_SETTINGS` に指定します。
+ファイルが見つからないとき、スクリプトは `ERROR: settings file is not readable` と表示して止まります。
+
+このファイルの値は、どれも `VAR="${VAR:-値}"` の形で書きます。
+そのため、実行時に付けた環境変数はこのファイルより優先され、このファイルはスクリプトの既定値より優先されます。
+このファイルの中では、`SETTINGS_DIR` がこのファイルのあるディレクトリを指します。JSON の設定ファイルのパスに使ってください。
+
+| まとまり | 変数 |
+|---|---|
+| Python | `PYTHON` |
+| 設定ファイル（JSON）と期間表 | `MISSION_CONFIG`、`INSTRUMENT_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE` |
+| Bundle とデータの Collection | `BUNDLE_NAME`、`DATA_COLLECTIONS` |
+| 観測ラベル | `LABEL_TEMPLATE`、`set_label_args` 関数 |
+| Document | `PDF_FILE`、`DOCUMENT_OUTPUT`、`COLLECTION_OUTPUT`、`DOCUMENT_LID`、`DOCUMENT_COLLECTION_LID`、`TITLE`、`DESCRIPTION`、`DOCUMENT_MODIFICATION_DESCRIPTION`、`COLLECTION_MODIFICATION_DESCRIPTION` |
+| PDS Validate | `VALIDATE_BIN`、`VALIDATE_CATALOG`、`VALIDATE_OPTION` |
+
+各変数の意味は、それを使うスクリプトの節を見てください。
+`DATA_COLLECTIONS` と `set_label_args` は `cron_mk_cdf_to_pds.sh` が使います。
+`TEMPLATE_FILE`、`COLLECTION_LID`、`VERSION_ID` はこのファイルに書かないでください。複数のスクリプトが、別の意味で使う名前だからです。
+Document Collection の LID は、`DOCUMENT_COLLECTION_LID` に書きます。
 
 ### PDS Validate 4.2.0 のインストール
 
@@ -145,7 +173,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 
 ## スクリプトに共通の決まり
 
-- テンプレートと設定ファイルは、スクリプトの場所からの相対パス（`../label_templates/`、`../user_config/`）で探します。
+- 機器の設定ファイルとテンプレートは、スクリプトの場所からの相対パス（`../user_config/pipeline_settings.sh`、`../label_templates/`）で探します。
 - 検証のレポートは、実行した場所からの相対パス（既定は `./pds_chk_log/`）に保存します。
 - 観測ラベルのスクリプトを除き、作ったラベルを `python -m miopds_common validate` で検証します。
 - どこかで失敗すると、その時点で止まります。
@@ -156,6 +184,7 @@ PSA と BepiColombo の辞書を解決する XML Catalog（`pds4-validate-catalo
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
+| `PIPELINE_SETTINGS` | 機器の設定ファイル | `../user_config/pipeline_settings.sh`（スクリプトの場所から） |
 | `PYTHON` | miopds_common をインストールした Python | `python3` |
 | `VALIDATE_ENABLED` | `0` にすると検証を省く | `1` |
 | `VALIDATE_BIN` | PDS Validate の実行ファイル | `$HOME/local/pds/validate/bin/validate` |
@@ -173,7 +202,7 @@ VALIDATE_ENABLED=0 ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pw
 PDS Validate にオプションを足す例を示します。
 
 ```bash
-VALIDATE_OPTION="-D --add-context-products context.json" ./pds/scripts/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
+VALIDATE_OPTION="-D --add-context-products context.json" ./pds/bash_wrapper/create_psa_bundle_jinja.sh ~/pds/bc_mmo_pwi
 ```
 
 `VALIDATE_OPTION` のオプションは、スクリプトが付けるオプションの後ろに足されます。
@@ -203,7 +232,7 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 |---|---|
 | `CDF_FILE` | CDF ファイル |
 | `TEMPLATE_DIR` | テンプレートのディレクトリ |
-| `TEMPLATE_NAME` | テンプレートの名前。`""` にすると `mmo_cdf_label_template_multi_dataset.xml.j2` |
+| `TEMPLATE_NAME` | テンプレートの名前。`""` にすると `LABEL_TEMPLATE` |
 | `OUTPUT_DIR` | 出力先のディレクトリ |
 | `OPTIONS` | 5つ目以降の引数は、`python -m miopds_common cdf2pdslabel` のオプションとしてそのまま渡る |
 
@@ -212,6 +241,7 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 | `MISSION_TIMELINE` | 期間表のファイル（任意。指定すると、ミッションフェーズを期間表から決める） | なし |
 | `MISSION_CONFIG` | ミッションの設定ファイル | `user_config/mission.json` |
 | `DATASET_CONFIG` | データセットの設定ファイル（機器と著者の設定は、この中に書いたパスから読む） | `user_config/dataset_pwi_efd.json` |
+| `LABEL_TEMPLATE` | `TEMPLATE_NAME` が `""` のときに使うテンプレートの名前 | `mmo_cdf_label_template_multi_dataset.xml.j2` |
 
 出力は `OUTPUT_DIR/CDF のファイル名.lblx` です（`.cdf` を `.lblx` に変えた名前）。
 ミッションフェーズは、`MISSION_TIMELINE` を指定したときは期間表の中で観測開始時刻が入る期間から、指定しないときは `mission.json` の既定値から決まります。
@@ -249,7 +279,7 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 |---|---|---|
 | `TEMPLATES_DIR` | テンプレートのディレクトリ | `label_templates/` |
 
-`MISSION_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE` は、そのまま観測ラベルのスクリプトに渡ります（意味は上の観測ラベルの節）。
+観測ラベルのスクリプトも同じ機器の設定ファイルを読むので、`MISSION_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE`、`LABEL_TEMPLATE` は、そのスクリプトと同じように働きます（意味は上の観測ラベルの節）。
 
 CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあってもかまいません（例：`フェーズ/データの種類/月/`）。
 ラベルは、それぞれの CDF と同じディレクトリに作ります。
@@ -318,7 +348,8 @@ PDF から Document のラベルと Document Collection（ラベルとインベ�
 |---|---|---|
 | `PDF_FILE` | PDF の名前（`DOCUMENT_DIR` の中） | `bc_mmo_pwi_data_user_guide.pdf` |
 | `DOCUMENT_LID` | Document の LID | `urn:jaxa:darts:bc_mmo_pwi:document:bc_mmo_pwi_data_user_guide` |
-| `COLLECTION_LID` | Document Collection の LID | `urn:jaxa:darts:bc_mmo_pwi:document` |
+| `DOCUMENT_COLLECTION_LID` | Document Collection の LID（機器の設定ファイルではこの名前を使う） | `urn:jaxa:darts:bc_mmo_pwi:document` |
+| `COLLECTION_LID` | Document Collection の LID（`DOCUMENT_COLLECTION_LID` より優先される。実行時にだけ指定する） | `$DOCUMENT_COLLECTION_LID` |
 | `VERSION_ID` | 版 | `1.0` |
 | `TITLE` | Document の題名 | PWI のデータユーザーガイドの題名 |
 | `DESCRIPTION` | Document の説明 | PWI のデータユーザーガイドの説明 |
@@ -402,7 +433,7 @@ cron などで定期的に実行すると、CDF や設定の変更が、ラベ�
 スクリプトは、次の構成を前提にしています。
 
 ```text
-BUNDLE_DIR/data_calibrated_efd/**/*.cdf   データ（Collection の下のどのディレクトリでもよい。ラベルは CDF と同じディレクトリに作る）
+BUNDLE_DIR/NAME/**/*.cdf                  DATA_COLLECTIONS の各 Collection（NAME）のデータ（Collection の下のどのディレクトリでもよい。ラベルは CDF と同じディレクトリに作る）
 BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手順を飛ばす）
 ```
 
@@ -414,17 +445,17 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | Collection | Collection のディレクトリの下のファイルとディレクトリ（追加と削除も含む） |
 | Document と Document Collection | PDF（`PDF_FILE`） |
 | Bundle | 各 Collection のラベル |
-| すべての製品に共通 | `label_templates/`、`user_config/`、`bash_wrapper/`、miopds_common の Python のコード |
+| すべての製品に共通 | `label_templates/`、`user_config/`、機器の設定ファイル、`bash_wrapper/`、miopds_common の Python のコード |
 
-テンプレート、設定ファイル、shell のどれかを書き換えると、すべての製品を作り直します。
+テンプレート、設定ファイル、機器の設定ファイル、shell のどれかを書き換えると、すべての製品を作り直します。
 観測ラベルは CDF 1つごとに Python を起動するので、作り直す CDF が多いと時間がかかります。
 
-機器に合わせて、スクリプトの中の次の2か所を書き換えます。
+機器に合わせて、機器の設定ファイルに次の2つを書きます（スクリプトは書き換えません）。
 
-| 書き換える場所 | 内容 |
+| 書くもの | 内容 |
 |---|---|
-| `set_label_args` 関数 | CDF ごとに `cdf2pdslabel` へ渡す追加のオプション（ミッションフェーズ、internal reference など） |
-| `make_data_collection` の行 | データの Collection ごとに、名前とデータセットの設定ファイルを1行ずつ書く。Collection を増やすときは行を足す |
+| `DATA_COLLECTIONS` | データの Collection ごとに、名前とデータセットの設定ファイルを `"名前\|設定ファイル"` の形で1行ずつ書く。Collection を増やすときは行を足す。空のときや、`\|` のない行があるときは、スクリプトが止まる |
+| `set_label_args` 関数 | CDF ごとに `cdf2pdslabel` へ渡す追加のオプション（ミッションフェーズ、internal reference など）。`$1` が CDF ファイルで、オプションは `LABEL_ARGS` に入れる。関数がなければ、オプションは足さない |
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
@@ -434,9 +465,9 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | `DOCUMENT_OUTPUT` | Document のラベルの名前 | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection のラベルの名前 | `collection_bc_mmo_pwi_document.lblx` |
 | `OUTPUT_FILE` | Bundle のラベルの名前 | `BUNDLE_DIR` の最後の部分 + `.lblx` |
-| `DATASET_CONFIG` | データの Collection のデータセットの設定ファイル | `user_config/dataset_pwi_efd.json` |
+| `DATASET_CONFIG` | データセットの設定ファイル（見本の機器の設定ファイルは `DATA_COLLECTIONS` の中でこれを使う） | `user_config/dataset_pwi_efd.json` |
 | `TEMPLATES_DIR` | テンプレートのディレクトリ | `label_templates/` |
-| `CONFIG_DIR` | 設定ファイルのディレクトリ | `user_config/` |
+| `CONFIG_DIR` | 設定ファイルのディレクトリ（すべての製品の入力になる） | 機器の設定ファイルのあるディレクトリ |
 | `LOCK_DIR` | ロックの場所 | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
 
 実行の決まりは次のとおりです。

@@ -2,7 +2,8 @@
 
 [日本語](README_ja.md)
 
-`user_config/` holds sample config files (JSON) used to make PDS4 labels. Copy
+`user_config/` holds sample config files (JSON) used to make PDS4 labels, and
+the sample settings file of the shell scripts (`pipeline_settings.sh`). Copy
 them into the instrument repository (e.g. `pds/user_config/`), and adapt them to
 the instrument and dataset.
 
@@ -22,8 +23,14 @@ PDS4 archive.
 | `authors_pwi_efd.json` | Author list | `List_Author` of the observational labels | `cdf2pdslabel` (through `authors_file` in `dataset_*.json`) |
 
 `pdf2pdslabel` reads only `mission.json`. The values of the Document itself
-(title, PDF name and so on) are given as command arguments or as environment
-variables of the shell scripts.
+(title, PDF name and so on) are given as command arguments, or in the settings
+file or environment variables of the shell scripts.
+
+`pipeline_settings.sh` is not a JSON config file. It is the settings file that
+the shell scripts in `bash_wrapper/` read (the Python to use, the paths of the
+config files above, the data Collections, the Document names and so on); the
+subcommands do not read it. For its items, see "Settings of the instrument" in
+[../bash_wrapper/README.md](../bash_wrapper/README.md).
 
 The timeline (`mission_timeline.json`), which decides the mission phase and
 target from the observation date, is not kept in this repository, because the

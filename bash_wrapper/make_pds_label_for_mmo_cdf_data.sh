@@ -7,8 +7,10 @@
 #   make_pds_label_for_mmo_cdf_data.sh \
 #     CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [miopds-label OPTIONS...]
 #
-#   TEMPLATE_NAME "" uses mmo_cdf_label_template_multi_dataset.xml.j2.
-#   TEMPLATE_NAME に "" を渡すと mmo_cdf_label_template_multi_dataset.xml.j2 を使う。
+#   TEMPLATE_NAME "" uses LABEL_TEMPLATE of the settings file
+#   (default: mmo_cdf_label_template_multi_dataset.xml.j2).
+#   TEMPLATE_NAME に "" を渡すと、設定ファイルの LABEL_TEMPLATE を使う
+#   （既定は mmo_cdf_label_template_multi_dataset.xml.j2）。
 #   Options after OUTPUT_DIR go to miopds-label and override the defaults below.
 #   OUTPUT_DIR より後のオプションは miopds-label に渡され、下の既定値より優先される。
 #   Set MISSION_TIMELINE to a mission_timeline.json to take the mission phase
@@ -19,11 +21,27 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Settings of the instrument (README.md). Environment variables given when
+# running the script win over them.
+# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
+[[ -r "$PIPELINE_SETTINGS" ]] || {
+  echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
+  echo "       Copy user_config/pipeline_settings.sh, or set PIPELINE_SETTINGS" >&2
+  exit 1
+}
+SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
+# Exported as a full path, so that the child scripts read the same file
+# 子 shell も同じファイルを読むよう、絶対パスにして export する
+export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+source "$PIPELINE_SETTINGS"
+
 USAGE="Usage: $0 CDF_FILE TEMPLATE_DIR TEMPLATE_NAME OUTPUT_DIR [OPTIONS...]"
 
 CDF_FILE="${1:?$USAGE}"
 TEMPLATE_DIR="${2:?$USAGE}"
-TEMPLATE_NAME="${3:-mmo_cdf_label_template_multi_dataset.xml.j2}"
+TEMPLATE_NAME="${3:-${LABEL_TEMPLATE:-mmo_cdf_label_template_multi_dataset.xml.j2}}"
 OUTPUT_DIR="${4:?$USAGE}"
 
 # Config files / 設定ファイル

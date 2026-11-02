@@ -35,9 +35,29 @@
 # own pipeline before this script.
 # L2 CDF の作成と、ここへのコピーは、この shell の前に各機器のパイプラインで行う。
 #
+# The data Collections (DATA_COLLECTIONS) and the per-CDF label options
+# (set_label_args) are written in the settings file, not in this script.
+# データの Collection（DATA_COLLECTIONS）と CDF ごとのラベルのオプション
+# （set_label_args）は、この shell ではなく設定ファイルに書く。
+#
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Settings of the instrument (README.md). Environment variables given when
+# running the script win over them.
+# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
+[[ -r "$PIPELINE_SETTINGS" ]] || {
+  echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
+  echo "       Copy user_config/pipeline_settings.sh, or set PIPELINE_SETTINGS" >&2
+  exit 1
+}
+SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
+# Exported as a full path, so that the child scripts read the same file
+# 子 shell も同じファイルを読むよう、絶対パスにして export する
+export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+source "$PIPELINE_SETTINGS"
 
 FORCE=0
 if [[ "${1:-}" == "all" || "${1:-}" == "--all" ]]; then
@@ -63,7 +83,7 @@ export REPORT_TIMESTAMP="${REPORT_TIMESTAMP:-$(date '+%Y%m%d_%H%M%S')}"
 export PYTHON="${PYTHON:-python3}"
 
 TEMPLATES_DIR="${TEMPLATES_DIR:-$SCRIPT_DIR/../label_templates}"
-CONFIG_DIR="${CONFIG_DIR:-$SCRIPT_DIR/../user_config}"
+CONFIG_DIR="${CONFIG_DIR:-$SETTINGS_DIR}"
 
 # Output names must match the child scripts' settings / 子 shell の設定と同じ名前にする
 PDF_FILE="${PDF_FILE:-bc_mmo_pwi_data_user_guide.pdf}"
@@ -72,20 +92,31 @@ export COLLECTION_OUTPUT="${COLLECTION_OUTPUT:-collection_bc_mmo_pwi_document.lb
 export OUTPUT_FILE="${OUTPUT_FILE:-${BUNDLE_NAME}.lblx}"
 
 
-# -- Per-CDF label options (edit for each instrument) ----------------------------
-# -- CDF ごとのラベルのオプション（機器ごとに編集する） ------------------------------
-# Fill LABEL_ARGS with extra options for miopds_common cdf2pdslabel, e.g. the
-# mission phase or internal references derived from the file name.
-# cdf2pdslabel に渡す追加のオプションを LABEL_ARGS に入れる
-# （ミッションフェーズや、ファイル名から作る internal reference など）。
-set_label_args() {
-  local cdf="$1"
-  LABEL_ARGS=()
-  # Example / 例:
-  # LABEL_ARGS+=(--mission-phase-name Cruise --mission-phase-id cruise)
-  # LABEL_ARGS+=(--internal-reference "urn:jaxa:darts:bc_mmo_pwi:document:pwi_data_user_guide::1.0|data_to_document")
-  : "$cdf"  # Unused until the examples above are enabled / 上の例を使うまでは未使用
-}
+# -- Per-CDF label options / CDF ごとのラベルのオプション ---------------------------
+# set_label_args CDF fills LABEL_ARGS with extra options for cdf2pdslabel. It is
+# defined in the settings file; without it, no option is added.
+# set_label_args CDF は、cdf2pdslabel に足すオプションを LABEL_ARGS に入れる。
+# 設定ファイルで定義する。定義がなければ、オプションを足さない。
+if ! declare -F set_label_args >/dev/null; then
+  set_label_args() {
+    LABEL_ARGS=()
+  }
+fi
+
+# -- Data Collections / データの Collection -----------------------------------------
+# DATA_COLLECTIONS in the settings file: one "NAME|DATASET_CONFIG" per Collection
+# 設定ファイルの DATA_COLLECTIONS：Collection ごとに「名前|dataset の設定ファイル」
+COLLECTION_ENTRIES=(${DATA_COLLECTIONS[@]+"${DATA_COLLECTIONS[@]}"})
+if (( ${#COLLECTION_ENTRIES[@]} == 0 )); then
+  echo "ERROR: no data Collection in DATA_COLLECTIONS ($PIPELINE_SETTINGS)" >&2
+  exit 1
+fi
+for entry in "${COLLECTION_ENTRIES[@]}"; do
+  [[ "$entry" == *"|"* ]] || {
+    echo "ERROR: DATA_COLLECTIONS entry is not NAME|DATASET_CONFIG: $entry" >&2
+    exit 1
+  }
+done
 
 
 # -- Helpers / 補助関数 ------------------------------------------------------------
@@ -142,7 +173,7 @@ date
 PACKAGE_DIR="$("$PYTHON" -c 'import miopds_common, os; print(os.path.dirname(os.path.abspath(miopds_common.__file__)))')"
 
 # Inputs shared by every product / すべての製品に共通の入力
-COMMON_INPUTS=("$TEMPLATES_DIR" "$CONFIG_DIR" "$SCRIPT_DIR")
+COMMON_INPUTS=("$TEMPLATES_DIR" "$CONFIG_DIR" "$PIPELINE_SETTINGS" "$SCRIPT_DIR")
 
 
 # -- Steps 1-2: one data collection / 手順1-2：データの Collection 1つ分 ------------
@@ -214,10 +245,11 @@ make_data_collection() {
 
 COLLECTION_LABELS=()
 
-# One line per data collection: name and its dataset config.
-# データの Collection ごとに1行書く（名前と、その dataset の設定ファイル）。
-make_data_collection data_calibrated_efd \
-  "${DATASET_CONFIG:-$CONFIG_DIR/dataset_pwi_efd.json}"
+# One data Collection for each "NAME|DATASET_CONFIG" of DATA_COLLECTIONS
+# DATA_COLLECTIONS の「名前|dataset の設定ファイル」ごとに、データの Collection を作る
+for entry in "${COLLECTION_ENTRIES[@]}"; do
+  make_data_collection "${entry%%|*}" "${entry#*|}"
+done
 
 
 # -- Step 3: documents / 手順3：Document ----------------------------------------------

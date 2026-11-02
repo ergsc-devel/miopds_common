@@ -8,12 +8,29 @@
 # Usage / 使い方:
 #   create_psa_document_jinja.sh [DOCUMENT_DIR]
 #
-# Other settings are environment variables (see README.md).
-# その他の設定は環境変数で変更する（README.md を参照）。
+# Other settings are read from the settings file (PIPELINE_SETTINGS), and
+# environment variables win over them (see README.md).
+# その他の設定は設定ファイル（PIPELINE_SETTINGS）から読み、環境変数で変更できる
+# （README.md を参照）。
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Settings of the instrument (README.md). Environment variables given when
+# running the script win over them.
+# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
+[[ -r "$PIPELINE_SETTINGS" ]] || {
+  echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
+  echo "       Copy user_config/pipeline_settings.sh, or set PIPELINE_SETTINGS" >&2
+  exit 1
+}
+SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
+# Exported as a full path, so that the child scripts read the same file
+# 子 shell も同じファイルを読むよう、絶対パスにして export する
+export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+source "$PIPELINE_SETTINGS"
 
 # -- Document / Document の設定 ---------------------------------------------------
 # The PDF must be in DOCUMENT_DIR / PDF は DOCUMENT_DIR の中に置く
@@ -21,7 +38,11 @@ DOCUMENT_DIR="${1:-bc_mmo_pwi/document}"
 DOCUMENT_DIR="${DOCUMENT_DIR%/}"
 PDF_FILE="${PDF_FILE:-bc_mmo_pwi_data_user_guide.pdf}"
 DOCUMENT_LID="${DOCUMENT_LID:-urn:jaxa:darts:bc_mmo_pwi:document:bc_mmo_pwi_data_user_guide}"
-COLLECTION_LID="${COLLECTION_LID:-urn:jaxa:darts:bc_mmo_pwi:document}"
+# The settings file uses DOCUMENT_COLLECTION_LID, because the Collection script
+# uses COLLECTION_LID for the data Collection
+# 設定ファイルでは DOCUMENT_COLLECTION_LID を使う（Collection の shell が
+# COLLECTION_LID をデータの Collection の LID に使うため）
+COLLECTION_LID="${COLLECTION_LID:-${DOCUMENT_COLLECTION_LID:-urn:jaxa:darts:bc_mmo_pwi:document}}"
 VERSION_ID="${VERSION_ID:-1.0}"
 TITLE="${TITLE:-BepiColombo MMO Plasma Wave Investigation Data User Guide}"
 DESCRIPTION="${DESCRIPTION:-Data user guide for the BepiColombo Mercury Magnetospheric Orbiter Plasma Wave Investigation archive. The guide describes all level products, archive organization, data format, time and coordinate systems, calibration, processing, and quality information.}"

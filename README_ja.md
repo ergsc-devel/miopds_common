@@ -14,8 +14,8 @@ Mio の各機器でアーカイブを担当する人が使うことを想定し�
 |---|---|---|
 | `miopds_common/` | Python パッケージ | pip でインストールします |
 | `label_templates/` | ラベルの Jinja2 テンプレート | 各機器のリポジトリにコピーして使います |
-| `bash_wrapper/` | Python のサブコマンドを呼ぶ shell スクリプト。`mio_examples/` には、特定の機器の環境に合わせた例を、機器ごとのディレクトリ（例：`pwi_efd/`）に置きます | 各機器のリポジトリにコピーして使います |
-| `user_config/` | 設定ファイル（JSON）の見本。PWI-EFD の値が入っています | 各機器のリポジトリにコピーし、機器に合わせて書き換えます |
+| `bash_wrapper/` | Python のサブコマンドを呼ぶ shell スクリプト。`mio_examples/` には、特定の機器の環境に合わせた例を、機器ごとのディレクトリ（例：`pwi_efd/`）に置きます | 各機器のリポジトリにコピーして使います。書き換えず、miopds_common が更新されたら上書きします |
+| `user_config/` | shell が読む機器の設定ファイル（`pipeline_settings.sh`）と、設定ファイル（JSON）の見本。PWI-EFD の値が入っています | 各機器のリポジトリにコピーし、機器に合わせて書き換えます |
 
 `label_templates/`、`bash_wrapper/`、`user_config/` は、pip ではインストールされません。
 
@@ -229,7 +229,8 @@ instrument_repo/                          # 機器のリポジトリ（例）
 ### shell スクリプトを使う準備
 
 A〜D の各手順は、Python のコマンドのほかに、`pds/bash_wrapper/` の shell スクリプトでも実行できます。
-shell スクリプトは、テンプレートと設定ファイルを `pds/label_templates/` と `pds/user_config/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
+shell スクリプトは、機器の設定を `pds/user_config/pipeline_settings.sh` から、テンプレートを `pds/label_templates/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
+ほかの機器では、機器の値を `pipeline_settings.sh` に書きます。shell スクリプトは書き換えません（[bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「機器の設定」）。
 Python のコマンドだけを使うときは、この節を飛ばしてください。
 
 shell スクリプトでは、期間表を環境変数 `MISSION_TIMELINE` で指定します。

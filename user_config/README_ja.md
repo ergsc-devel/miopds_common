@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-`user_config/` には、PDS4 のラベルを作るときに使う設定ファイル（JSON）の見本があります。
+`user_config/` には、PDS4 のラベルを作るときに使う設定ファイル（JSON）の見本と、shell が読む機器の設定ファイル（`pipeline_settings.sh`）の見本があります。
 機器のリポジトリにコピーし（例：`pds/user_config/`）、機器とデータセットに合わせて書き換えて使います。
 
 この文書では、設定ファイルの各項目の意味と、その値がラベルのどの要素に入るかを説明します。
@@ -19,7 +19,10 @@
 | `authors_pwi_efd.json` | 著者リスト | 観測ラベルの `List_Author` | `cdf2pdslabel`（`dataset_*.json` の `authors_file` から読む） |
 
 `pdf2pdslabel` が読むのは `mission.json` だけです。
-Document そのものの値（題名、PDF の名前など）は、コマンドの引数か shell の環境変数で指定します。
+Document そのものの値（題名、PDF の名前など）は、コマンドの引数か、shell の機器の設定ファイルか環境変数で指定します。
+
+`pipeline_settings.sh` は JSON の設定ファイルではなく、`bash_wrapper/` の shell が読む機器の設定ファイルです（使う Python、上の設定ファイルの場所、データの Collection、Document の名前など）。サブコマンドは読みません。
+項目は、[../bash_wrapper/README_ja.md](../bash_wrapper/README_ja.md) の「機器の設定」を見てください。
 
 観測日からミッションフェーズとターゲットを決める期間表（`mission_timeline.json`）は、フェーズの期間が公開されていないので、このリポジトリには置きません。
 作り方は、下の「ミッションフェーズとターゲットの決め方」を見てください。

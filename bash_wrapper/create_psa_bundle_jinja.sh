@@ -11,12 +11,29 @@
 # Default output / 既定の出力:
 #   bc_mmo_pwi/bc_mmo_pwi.lblx
 #
-# Other settings are environment variables (see README.md).
-# その他の設定は環境変数で変更する（README.md を参照）。
+# Other settings are read from the settings file (PIPELINE_SETTINGS), and
+# environment variables win over them (see README.md).
+# その他の設定は設定ファイル（PIPELINE_SETTINGS）から読み、環境変数で変更できる
+# （README.md を参照）。
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Settings of the instrument (README.md). Environment variables given when
+# running the script win over them.
+# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
+[[ -r "$PIPELINE_SETTINGS" ]] || {
+  echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
+  echo "       Copy user_config/pipeline_settings.sh, or set PIPELINE_SETTINGS" >&2
+  exit 1
+}
+SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
+# Exported as a full path, so that the child scripts read the same file
+# 子 shell も同じファイルを読むよう、絶対パスにして export する
+export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+source "$PIPELINE_SETTINGS"
 
 # -- Bundle / Bundle の設定 -------------------------------------------------------
 BUNDLE_DIR="${1:-bc_mmo_pwi}"

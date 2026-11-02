@@ -16,8 +16,8 @@ The repository has four parts.
 |---|---|---|
 | `miopds_common/` | The Python package | Install it with pip |
 | `label_templates/` | Jinja2 templates of the labels | Copy it into each instrument repository |
-| `bash_wrapper/` | Shell scripts that call the Python subcommands. `mio_examples/` holds examples made for the environment of a particular instrument, in a directory per instrument (e.g. `pwi_efd/`) | Copy it into each instrument repository |
-| `user_config/` | Sample config files (JSON), with the values for PWI-EFD | Copy it into each instrument repository, and edit it for the instrument |
+| `bash_wrapper/` | Shell scripts that call the Python subcommands. `mio_examples/` holds examples made for the environment of a particular instrument, in a directory per instrument (e.g. `pwi_efd/`) | Copy it into each instrument repository. Do not edit it; when miopds_common is updated, overwrite it |
+| `user_config/` | Sample settings file of the shell scripts (`pipeline_settings.sh`) and config files (JSON), with the values for PWI-EFD | Copy it into each instrument repository, and edit it for the instrument |
 
 pip does not install `label_templates/`, `bash_wrapper/` or `user_config/`.
 
@@ -256,9 +256,12 @@ When the table is updated, convert it again. If the content has not changed,
 
 Each step from A to D can also be run with the shell scripts in
 `pds/bash_wrapper/`, not only with the Python commands. The shell scripts read the
-templates and config files from `pds/label_templates/` and `pds/user_config/`, and save
-the validation reports in `pds_chk_log/` in the repository. If you use only
-the Python commands, skip this section.
+settings of the instrument from `pds/user_config/pipeline_settings.sh` and the
+templates from `pds/label_templates/`, and save the validation reports in
+`pds_chk_log/` in the repository. For other instruments, write the values of
+the instrument in `pipeline_settings.sh`; the scripts need no edit (see
+"Settings of the instrument" in [bash_wrapper/README.md](bash_wrapper/README.md)).
+If you use only the Python commands, skip this section.
 
 The shell scripts take the timeline from the environment variable
 `MISSION_TIMELINE`. The observational label script takes the mission phase
