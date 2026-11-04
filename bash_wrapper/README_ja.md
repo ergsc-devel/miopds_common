@@ -42,7 +42,7 @@ pds/                     # 機器のリポジトリの中（miopds_common では
 | `label_templates/document_template.xml.j2` | Document のラベルのテンプレート |
 | `label_templates/document_collection_template.xml.j2` | Document Collection のラベルのテンプレート |
 | `label_templates/bundle_template.xml.j2` | Bundle のラベルのテンプレート |
-| `user_config/pipeline_settings.sh` | スクリプトが読む機器の設定（PWI-EFD の記入例） |
+| `user_config/pipeline_settings.sh` | スクリプトが読む、1つのデータの Collection の設定（PWI-EFD の記入例）。データの Collection ごとに1つ作る |
 | `user_config/mission.json` | ミッションの設定（すべての Mio の機器で共通） |
 | `user_config/instrument_pwi.json` | 機器の設定（PWI の記入例） |
 | `user_config/dataset_pwi_efd.json` | データセットの設定（PWI-EFD の記入例。`REPLACE_` の値を書き換えてから使う） |
@@ -90,6 +90,7 @@ crontab の行の例を示します（パスは例です。サーバーに合わ
 ### 機器の設定：`pipeline_settings.sh`
 
 どのスクリプトも、始めに機器の設定ファイルを `source` で読みます。
+1つのファイルに、1つのデータの Collection の値を書きます。
 このファイルの既定の場所は、スクリプトの場所からの相対パスで `../user_config/pipeline_settings.sh` です。ほかのファイルを使うときは、環境変数 `PIPELINE_SETTINGS` に指定します。
 ファイルが見つからないとき、スクリプトは `ERROR: settings file is not readable` と表示して止まります。
 
@@ -100,16 +101,43 @@ crontab の行の例を示します（パスは例です。サーバーに合わ
 | まとまり | 変数 |
 |---|---|
 | Python | `PYTHON` |
-| 設定ファイル（JSON）と期間表 | `MISSION_CONFIG`、`INSTRUMENT_CONFIG`、`DATASET_CONFIG`、`MISSION_TIMELINE` |
-| Bundle とデータの Collection | `BUNDLE_NAME`、`DATA_COLLECTIONS` |
-| 観測ラベル | `LABEL_TEMPLATE`、`set_label_args` 関数 |
-| Document | `PDF_FILE`、`DOCUMENT_OUTPUT`、`COLLECTION_OUTPUT`、`DOCUMENT_LID`、`DOCUMENT_COLLECTION_LID`、`TITLE`、`DESCRIPTION`、`DOCUMENT_MODIFICATION_DESCRIPTION`、`COLLECTION_MODIFICATION_DESCRIPTION` |
+| このデータの Collection | `COLLECTION_NAME`、`DATASET_CONFIG`、`LABEL_TEMPLATE`、`MISSION_TIMELINE`、`set_label_args` 関数 |
+| Bundle に共通 | `BUNDLE_NAME`、`MISSION_CONFIG`、`INSTRUMENT_CONFIG` |
+| Document（Bundle に共通） | `PDF_FILE`、`DOCUMENT_OUTPUT`、`COLLECTION_OUTPUT`、`DOCUMENT_LID`、`DOCUMENT_COLLECTION_LID`、`TITLE`、`DESCRIPTION`、`DOCUMENT_MODIFICATION_DESCRIPTION`、`COLLECTION_MODIFICATION_DESCRIPTION` |
 | PDS Validate | `VALIDATE_BIN`、`VALIDATE_CATALOG`、`VALIDATE_OPTION` |
 
 各変数の意味は、それを使うスクリプトの節を見てください。
-`DATA_COLLECTIONS` と `set_label_args` は `cron_mk_cdf_to_pds.sh` が使います。
+`set_label_args` は `make_pds_label_for_mmo_cdf_data.sh` と、それを呼ぶスクリプトが使います。
 `TEMPLATE_FILE`、`COLLECTION_LID`、`VERSION_ID` はこのファイルに書かないでください。複数のスクリプトが、別の意味で使う名前だからです。
 Document Collection の LID は、`DOCUMENT_COLLECTION_LID` に書きます。
+
+### データの Collection が複数ある機器の設定ファイル
+
+データの Collection ごとに、見本をコピーするなどして機器の設定ファイルを1つ作ります。
+1つの Bundle に Collection が3つある場合の例を示します（名前は例です）。
+
+```text
+pds/user_config/pipeline_settings_hep_raw.sh
+pds/user_config/pipeline_settings_hep_par.sh
+pds/user_config/pipeline_settings_hep_cal.sh
+```
+
+1つの Collection を扱うスクリプトには、`PIPELINE_SETTINGS` でファイルを指定します。
+
+```bash
+PIPELINE_SETTINGS=./pds/user_config/pipeline_settings_hep_raw.sh ./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_hep/data_raw
+```
+
+`cron_mk_cdf_to_pds.sh` には、Bundle のファイルをすべて引数で渡します（そのスクリプトの節を見てください）。
+Bundle が複数あるときは、Bundle ごとに1回実行します。別の Bundle なら同時に実行できます。
+
+Bundle のためだけの設定ファイルは要りません。
+Bundle に共通の値（`BUNDLE_NAME`、`MISSION_CONFIG`、`INSTRUMENT_CONFIG` と Document の値）は、どのファイルにも同じ値を書きます。
+そのため、`create_psa_document_jinja.sh` と `create_psa_bundle_jinja.sh` には、その Bundle のどのファイルを指定しても同じ結果になります。
+
+機器の設定ファイルは、ほかのファイルを `source` で読めます。
+共通の値を別のファイルに1回だけ書き、`source "$SETTINGS_DIR/hep_common.sh"` のように読むこともできます。
+`cron_mk_cdf_to_pds.sh` は、この別のファイルを製品と比べません。このファイルを書き換えたら、`all` を付けて実行してください。
 
 ### PDS Validate 4.2.0 のインストール
 
@@ -249,6 +277,11 @@ CDF ファイル1つから、観測ラベルを1つ作ります。このスク�
 `--mission-phase-name` と `--mission-phase-id` をオプションに書くと、どちらよりも優先されます。
 使えるオプションは `python -m miopds_common cdf2pdslabel --help` で確かめられます。
 
+CDF ごとのオプション（ミッションフェーズ、internal reference など）は、機器の設定ファイルの `set_label_args` 関数に書けます。
+`$1` が CDF ファイルで、オプションは `LABEL_ARGS` に入れます。関数がなければ、オプションは足しません。
+`OPTIONS` のオプションは、この関数のオプションより後ろに並びます。そのため、`OPTIONS` の `--mission-phase-name` と `--mission-phase-id` が優先され、`--internal-reference` は関数のものに加わります。
+`make_all_pds_label_for_collection.sh`、`cron_mk_cdf_to_pds.sh`、`make_pds_labels_simple.sh` はこのスクリプトを実行するので、これらでも関数が使われます。
+
 例を示します。
 
 ```bash
@@ -299,7 +332,7 @@ CDF ファイルは、`COLLECTION_DIR` の下のどのディレクトリにあ�
 ./pds/bash_wrapper/create_psa_collection_jinja.sh [COLLECTION_NAME]
 ```
 
-`COLLECTION_NAME` は Collection の名前です（既定は `data_calibrated_efd`）。英数字、`_`、`-` だけが使えます。
+`COLLECTION_NAME` は Collection の名前です（既定は機器の設定ファイルの `COLLECTION_NAME`）。英数字、`_`、`-` だけが使えます。
 Collection のディレクトリは、環境変数 `COLLECTION_DIR` で渡します。
 例を示します。
 
@@ -422,18 +455,27 @@ Bundle のラベルには、著者リストを書きません。
 cron などで定期的に実行すると、CDF や設定の変更が、ラベル、Collection、Bundle に反映されます。
 
 ```bash
-./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR] [SETTINGS_FILE...]
 ```
 
 | 引数 | 意味 |
 |---|---|
 | `all` | すべての製品を作り直す（`--all` でもよい） |
 | `BUNDLE_DIR` | Bundle のディレクトリ（既定は `bc_mmo_pwi`） |
+| `SETTINGS_FILE` | その Bundle の機器の設定ファイル。データの Collection ごとに1つ（既定は `PIPELINE_SETTINGS` のファイル、なければ `../user_config/pipeline_settings.sh`） |
+
+データの Collection が3つある場合の例を示します（`*` は、シェルが当てはまるファイル名に展開します）。
+
+```bash
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh ~/pds/bc_mmo_hep ./pds/user_config/pipeline_settings_hep_*.sh
+```
+
+スクリプトは、設定ファイルごとに観測ラベルと Collection を作り、最後に Document と Bundle を1回だけ作ります。
 
 スクリプトは、次の構成を前提にしています。
 
 ```text
-BUNDLE_DIR/NAME/**/*.cdf                  DATA_COLLECTIONS の各 Collection（NAME）のデータ（Collection の下のどのディレクトリでもよい。ラベルは CDF と同じディレクトリに作る）
+BUNDLE_DIR/NAME/**/*.cdf                  Collection（NAME は各設定ファイルの COLLECTION_NAME）のデータ（Collection の下のどのディレクトリでもよい。ラベルは CDF と同じディレクトリに作る）
 BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手順を飛ばす）
 ```
 
@@ -442,20 +484,17 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | 出力 | 入力 |
 |---|---|
 | 観測ラベル（CDF ごと） | その CDF、データセットの設定ファイル、期間表（`MISSION_TIMELINE` を指定したとき） |
-| Collection | Collection のディレクトリの下のファイルとディレクトリ（追加と削除も含む） |
-| Document と Document Collection | PDF（`PDF_FILE`） |
-| Bundle | 各 Collection のラベル |
-| すべての製品に共通 | `label_templates/`、`user_config/`、機器の設定ファイル、`bash_wrapper/`、miopds_common の Python のコード |
+| Collection | Collection のディレクトリの下のファイルとディレクトリ（追加と削除も含む）、データセットの設定ファイル |
+| Document と Document Collection | PDF（`PDF_FILE`）、`INSTRUMENT_CONFIG` |
+| Bundle | 各 Collection のラベル、`INSTRUMENT_CONFIG` |
+| すべての製品に共通 | `label_templates/`、`MISSION_CONFIG`、機器の設定ファイル（Document と Bundle は最初のファイル）、`bash_wrapper/`、miopds_common の Python のコード |
 
-テンプレート、設定ファイル、機器の設定ファイル、shell のどれかを書き換えると、すべての製品を作り直します。
+テンプレート、`MISSION_CONFIG`、shell のどれかを書き換えると、すべての製品を作り直します。
+機器の設定ファイルを書き換えると、その Collection の製品と Bundle を作り直し、ほかの Collection は作り直しません。最初のファイルを書き換えたときは、Document も作り直します。
 観測ラベルは CDF 1つごとに Python を起動するので、作り直す CDF が多いと時間がかかります。
 
-機器に合わせて、機器の設定ファイルに次の2つを書きます（スクリプトは書き換えません）。
-
-| 書くもの | 内容 |
-|---|---|
-| `DATA_COLLECTIONS` | データの Collection ごとに、名前とデータセットの設定ファイルを `"名前\|設定ファイル"` の形で1行ずつ書く。Collection を増やすときは行を足す。空のときや、`\|` のない行があるときは、スクリプトが止まる |
-| `set_label_args` 関数 | CDF ごとに `cdf2pdslabel` へ渡す追加のオプション（ミッションフェーズ、internal reference など）。`$1` が CDF ファイルで、オプションは `LABEL_ARGS` に入れる。関数がなければ、オプションは足さない |
+それぞれの機器の設定ファイルに、データの Collection の名前を `COLLECTION_NAME` で書きます。
+指定がないときや、2つのファイルで同じ名前のときは、スクリプトが止まります。
 
 | 環境変数 | 意味 | 既定値 |
 |---|---|---|
@@ -465,13 +504,15 @@ BUNDLE_DIR/document/*.pdf                 文書（なければ Document の手�
 | `DOCUMENT_OUTPUT` | Document のラベルの名前 | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection のラベルの名前 | `collection_bc_mmo_pwi_document.lblx` |
 | `OUTPUT_FILE` | Bundle のラベルの名前 | `BUNDLE_DIR` の最後の部分 + `.lblx` |
-| `DATASET_CONFIG` | データセットの設定ファイル（見本の機器の設定ファイルは `DATA_COLLECTIONS` の中でこれを使う） | `user_config/dataset_pwi_efd.json` |
+| `DATASET_CONFIG` | その Collection のデータセットの設定ファイル | `user_config/dataset_pwi_efd.json` |
 | `TEMPLATES_DIR` | テンプレートのディレクトリ | `label_templates/` |
-| `CONFIG_DIR` | 設定ファイルのディレクトリ（すべての製品の入力になる） | 機器の設定ファイルのあるディレクトリ |
 | `LOCK_DIR` | ロックの場所 | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
 
 実行の決まりは次のとおりです。
 
+- 何かを作る前に、すべての機器の設定ファイルを確かめます。
+  `BUNDLE_NAME`、`MISSION_CONFIG`、`INSTRUMENT_CONFIG`、Document の値のどれかがファイルの間で違うと止まります。
+- すべての手順で、最初の機器の設定ファイルの Python を使います。
 - 同じ Bundle に対しては、同時に1つしか実行できません（ロックを使います）。
   cron と手で実行するときで `TMPDIR` が違うときは、`LOCK_DIR` に固定の場所を指定してください。
   異常終了でロックが残ったときは、ほかに実行中でないことを確かめてから、ロックのディレクトリを `rmdir` で消してください。

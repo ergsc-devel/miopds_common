@@ -230,7 +230,7 @@ instrument_repo/                          # 機器のリポジトリ（例）
 
 A〜D の各手順は、Python のコマンドのほかに、`pds/bash_wrapper/` の shell スクリプトでも実行できます。
 shell スクリプトは、機器の設定を `pds/user_config/pipeline_settings.sh` から、テンプレートを `pds/label_templates/` から読み、検証のレポートをリポジトリの `pds_chk_log/` に保存します。
-ほかの機器では、機器の値を `pipeline_settings.sh` に書きます。shell スクリプトは書き換えません（[bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「機器の設定」）。
+ほかの機器では、機器の値を `pipeline_settings.sh` に書きます（データの Collection ごとに1つ）。shell スクリプトは書き換えません（[bash_wrapper/README_ja.md](bash_wrapper/README_ja.md) の「機器の設定」）。
 Python のコマンドだけを使うときは、この節を飛ばしてください。
 
 shell スクリプトでは、期間表を環境変数 `MISSION_TIMELINE` で指定します。

@@ -259,8 +259,9 @@ Each step from A to D can also be run with the shell scripts in
 settings of the instrument from `pds/user_config/pipeline_settings.sh` and the
 templates from `pds/label_templates/`, and save the validation reports in
 `pds_chk_log/` in the repository. For other instruments, write the values of
-the instrument in `pipeline_settings.sh`; the scripts need no edit (see
-"Settings of the instrument" in [bash_wrapper/README.md](bash_wrapper/README.md)).
+the instrument in `pipeline_settings.sh`, one file per data Collection; the
+scripts need no edit (see "Settings of the instrument" in
+[bash_wrapper/README.md](bash_wrapper/README.md)).
 If you use only the Python commands, skip this section.
 
 The shell scripts take the timeline from the environment variable

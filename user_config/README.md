@@ -28,8 +28,9 @@ file or environment variables of the shell scripts.
 
 `pipeline_settings.sh` is not a JSON config file. It is the settings file that
 the shell scripts in `bash_wrapper/` read (the Python to use, the paths of the
-config files above, the data Collections, the Document names and so on); the
-subcommands do not read it. For its items, see "Settings of the instrument" in
+config files above, the name of the data Collection, the Document names and so
+on), one file per data Collection; the subcommands do not read it. For its
+items, see "Settings of the instrument" in
 [../bash_wrapper/README.md](../bash_wrapper/README.md).
 
 The timeline (`mission_timeline.json`), which decides the mission phase and

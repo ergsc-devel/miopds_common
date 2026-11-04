@@ -21,7 +21,7 @@
 `pdf2pdslabel` が読むのは `mission.json` だけです。
 Document そのものの値（題名、PDF の名前など）は、コマンドの引数か、shell の機器の設定ファイルか環境変数で指定します。
 
-`pipeline_settings.sh` は JSON の設定ファイルではなく、`bash_wrapper/` の shell が読む機器の設定ファイルです（使う Python、上の設定ファイルの場所、データの Collection、Document の名前など）。サブコマンドは読みません。
+`pipeline_settings.sh` は JSON の設定ファイルではなく、`bash_wrapper/` の shell が読む機器の設定ファイルです（使う Python、上の設定ファイルの場所、データの Collection の名前、Document の名前など）。データの Collection ごとに1つ作ります。サブコマンドは読みません。
 項目は、[../bash_wrapper/README_ja.md](../bash_wrapper/README_ja.md) の「機器の設定」を見てください。
 
 観測日からミッションフェーズとターゲットを決める期間表（`mission_timeline.json`）は、フェーズの期間が公開されていないので、このリポジトリには置きません。

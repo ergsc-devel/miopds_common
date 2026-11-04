@@ -19,18 +19,22 @@
 #   and then to miopds-label, for every CDF file.
 #   COLLECTION_DIR より後のオプションは、すべての CDF について
 #   make_pds_label_for_mmo_cdf_data.sh を経て miopds-label に渡される。
-#   MISSION_CONFIG, DATASET_CONFIG and MISSION_TIMELINE are passed on as they are.
-#   The child script reads the same settings file (PIPELINE_SETTINGS).
-#   MISSION_CONFIG、DATASET_CONFIG、MISSION_TIMELINE はそのまま子 shell に渡る。
-#   子 shell も同じ設定ファイル（PIPELINE_SETTINGS）を読む。
+#   The label script called for each CDF file reads the same settings file
+#   (PIPELINE_SETTINGS). Environment variables given when running this script
+#   also reach it.
+#   CDF ごとに呼ぶラベルの shell も、同じ設定ファイル（PIPELINE_SETTINGS）を読む。
+#   この shell の実行時に付けた環境変数は、ラベルの shell にも届く。
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Settings of the instrument (README.md). Environment variables given when
-# running the script win over them.
-# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+# Read the settings file of one data Collection (README.md). Choose the file with
+# PIPELINE_SETTINGS (any name); without it, the default below is read. Environment
+# variables given when running the script win over the values in the file.
+# 1つのデータの Collection の設定ファイルを読む（README.md）。ファイルは
+# PIPELINE_SETTINGS で選ぶ（名前は自由）。指定がなければ下の既定のファイルを読む。
+# 実行時に付けた環境変数は、ファイルの値より優先される。
 PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
 [[ -r "$PIPELINE_SETTINGS" ]] || {
   echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
@@ -38,8 +42,9 @@ PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_sett
   exit 1
 }
 SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
-# Exported as a full path, so that the child scripts read the same file
-# 子 shell も同じファイルを読むよう、絶対パスにして export する
+# Use the full path, and export it so that the label script called below reads
+# the same file
+# 下で呼ぶラベルの shell も同じファイルを読むよう、絶対パスにして export する
 export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
 source "$PIPELINE_SETTINGS"
 

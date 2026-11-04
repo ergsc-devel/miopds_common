@@ -17,9 +17,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Settings of the instrument (README.md). Environment variables given when
-# running the script win over them.
-# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+# Read one settings file of the Bundle (README.md): the values of the Bundle and
+# the Document are the same in all its files. Choose the file with
+# PIPELINE_SETTINGS (any name); without it, the default below is read. Environment
+# variables given when running the script win over the values in the file.
+# この Bundle の設定ファイルを1つ読む（README.md）。Bundle と Document の値は、どの
+# ファイルでも同じ。ファイルは PIPELINE_SETTINGS で選ぶ（名前は自由）。指定がなければ
+# 下の既定のファイルを読む。実行時に付けた環境変数は、ファイルの値より優先される。
 PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
 [[ -r "$PIPELINE_SETTINGS" ]] || {
   echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
@@ -27,9 +31,9 @@ PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_sett
   exit 1
 }
 SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
-# Exported as a full path, so that the child scripts read the same file
-# 子 shell も同じファイルを読むよう、絶対パスにして export する
-export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+# Use the full path: "source" searches PATH for a name without "/"
+# 絶対パスにする（source は、/ のない名前を PATH から探すため）
+PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
 source "$PIPELINE_SETTINGS"
 
 # -- Document / Document の設定 ---------------------------------------------------

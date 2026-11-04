@@ -7,10 +7,11 @@
 # Usage:
 #   ./make_pds_labels_simple.sh CDF_DIRECTORY LABEL_OUTPUT_DIRECTORY
 #
-# Python, the config files, the timeline and the template are read from the
-# settings file, as in the scripts in bash_wrapper/ (README.md).
-# Python、設定ファイル、期間表、テンプレートは、bash_wrapper/ の shell と同じく
-# 設定ファイルから読む（README.md）。
+# Python, the config files, the timeline, the template and the label options
+# (set_label_args) are read from the settings file, as in the scripts in
+# bash_wrapper/ (README.md).
+# Python、設定ファイル、期間表、テンプレート、ラベルのオプション（set_label_args）は、
+# bash_wrapper/ の shell と同じく設定ファイルから読む（README.md）。
 
 set -euo pipefail
 
@@ -27,10 +28,12 @@ OUTPUT_DIR="$2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WRAPPER_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Settings of the instrument: the same file as the scripts in bash_wrapper/.
-# Environment variables given when running the script win over them.
-# 機器の設定を読む（bash_wrapper/ の shell と同じファイル）。実行時に付けた
-# 環境変数のほうが優先される。
+# Read the settings file of one data Collection (README.md). Choose the file with
+# PIPELINE_SETTINGS (any name); without it, the default below is read. Environment
+# variables given when running the script win over the values in the file.
+# 1つのデータの Collection の設定ファイルを読む（README.md）。ファイルは
+# PIPELINE_SETTINGS で選ぶ（名前は自由）。指定がなければ下の既定のファイルを読む。
+# 実行時に付けた環境変数は、ファイルの値より優先される。
 PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$WRAPPER_DIR/../user_config/pipeline_settings.sh}"
 [[ -r "$PIPELINE_SETTINGS" ]] || {
   echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
@@ -38,8 +41,9 @@ PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$WRAPPER_DIR/../user_config/pipeline_set
   exit 1
 }
 SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
-# Exported as a full path, so that the child script reads the same file
-# 子 shell も同じファイルを読むよう、絶対パスにして export する
+# Use the full path, and export it so that the label script called below reads
+# the same file
+# 下で呼ぶラベルの shell も同じファイルを読むよう、絶対パスにして export する
 export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
 source "$PIPELINE_SETTINGS"
 

@@ -48,7 +48,7 @@ pds/                     # in the instrument repository (at the top of miopds_co
 | `label_templates/document_template.xml.j2` | Template of the Document label |
 | `label_templates/document_collection_template.xml.j2` | Template of the Document Collection label |
 | `label_templates/bundle_template.xml.j2` | Template of the Bundle label |
-| `user_config/pipeline_settings.sh` | Settings of the instrument that the scripts read (filled in for PWI-EFD) |
+| `user_config/pipeline_settings.sh` | Settings of one data Collection that the scripts read (filled in for PWI-EFD). Make one file per data Collection |
 | `user_config/mission.json` | Mission settings (shared by all Mio instruments) |
 | `user_config/instrument_pwi.json` | Instrument settings (filled in for PWI) |
 | `user_config/dataset_pwi_efd.json` | Dataset settings (filled in for PWI-EFD; replace the `REPLACE_` values before use) |
@@ -100,7 +100,8 @@ the Python you gave).
 
 ### Settings of the instrument: `pipeline_settings.sh`
 
-Each script reads the settings file with `source` when it starts. The file is
+Each script reads a settings file with `source` when it starts. One settings
+file holds the values of one data Collection. The file is
 `../user_config/pipeline_settings.sh` (relative to the script) by default;
 give another file in the environment variable `PIPELINE_SETTINGS`. If the file
 is not found, the scripts stop with `ERROR: settings file is not readable`.
@@ -113,17 +114,48 @@ of the file; use it in the paths of the config files.
 | Group | Variables |
 |---|---|
 | Python | `PYTHON` |
-| Config files | `MISSION_CONFIG`, `INSTRUMENT_CONFIG`, `DATASET_CONFIG`, `MISSION_TIMELINE` |
-| Bundle and data Collections | `BUNDLE_NAME`, `DATA_COLLECTIONS` |
-| Observational labels | `LABEL_TEMPLATE`, the `set_label_args` function |
-| Document | `PDF_FILE`, `DOCUMENT_OUTPUT`, `COLLECTION_OUTPUT`, `DOCUMENT_LID`, `DOCUMENT_COLLECTION_LID`, `TITLE`, `DESCRIPTION`, `DOCUMENT_MODIFICATION_DESCRIPTION`, `COLLECTION_MODIFICATION_DESCRIPTION` |
+| This data Collection | `COLLECTION_NAME`, `DATASET_CONFIG`, `LABEL_TEMPLATE`, `MISSION_TIMELINE`, the `set_label_args` function |
+| Common to the Bundle | `BUNDLE_NAME`, `MISSION_CONFIG`, `INSTRUMENT_CONFIG` |
+| Document (common to the Bundle) | `PDF_FILE`, `DOCUMENT_OUTPUT`, `COLLECTION_OUTPUT`, `DOCUMENT_LID`, `DOCUMENT_COLLECTION_LID`, `TITLE`, `DESCRIPTION`, `DOCUMENT_MODIFICATION_DESCRIPTION`, `COLLECTION_MODIFICATION_DESCRIPTION` |
 | PDS Validate | `VALIDATE_BIN`, `VALIDATE_CATALOG`, `VALIDATE_OPTION` |
 
 For the meaning of each variable, see the section of the script that uses it.
-`DATA_COLLECTIONS` and `set_label_args` are used by `cron_mk_cdf_to_pds.sh`.
+`set_label_args` is used by `make_pds_label_for_mmo_cdf_data.sh` and the scripts
+that call it.
 Do not write `TEMPLATE_FILE`, `COLLECTION_LID` or `VERSION_ID` in the file:
 several scripts use these names with different meanings. For the LID of the
 Document Collection, write `DOCUMENT_COLLECTION_LID`.
+
+### Settings files of an instrument with several data Collections
+
+Make one settings file per data Collection, for example by copying the sample.
+An example with three Collections in one Bundle (the names are examples):
+
+```text
+pds/user_config/pipeline_settings_hep_raw.sh
+pds/user_config/pipeline_settings_hep_par.sh
+pds/user_config/pipeline_settings_hep_cal.sh
+```
+
+The scripts that work on one Collection take the file in `PIPELINE_SETTINGS`:
+
+```bash
+PIPELINE_SETTINGS=./pds/user_config/pipeline_settings_hep_raw.sh ./pds/bash_wrapper/make_all_pds_label_for_collection.sh ~/pds/bc_mmo_hep/data_raw
+```
+
+`cron_mk_cdf_to_pds.sh` takes all the files of a Bundle as arguments (see its
+section). For several Bundles, run it once per Bundle; different Bundles can
+run at the same time.
+
+No settings file is needed for the Bundle itself. Write the values common to
+the Bundle (`BUNDLE_NAME`, `MISSION_CONFIG`, `INSTRUMENT_CONFIG` and the Document
+values) in each file, with the same values. So `create_psa_document_jinja.sh`
+and `create_psa_bundle_jinja.sh` can be given any of the files of the Bundle.
+
+A settings file can read other values with `source`, so the common values can
+be written once in another file, such as
+`source "$SETTINGS_DIR/hep_common.sh"`. `cron_mk_cdf_to_pds.sh` does not compare
+that other file with the products: after editing it, run the script with `all`.
 
 ### Installing PDS Validate 4.2.0
 
@@ -285,6 +317,15 @@ the options, run `python -m miopds_common cdf2pdslabel --help`. For how to
 make the timeline (`mission_timeline.json`), see "Make the timeline" in
 [../README.md](../README.md).
 
+Options for each CDF file can be written in the `set_label_args` function of the
+settings file (mission phase, internal reference, ...). `$1` is the CDF file; put
+the options in `LABEL_ARGS`. Without the function, no option is added. The
+options in `OPTIONS` come after them: `--mission-phase-name` and
+`--mission-phase-id` in `OPTIONS` win, and `--internal-reference` is added to
+those of the function. `make_all_pds_label_for_collection.sh`,
+`cron_mk_cdf_to_pds.sh` and `make_pds_labels_simple.sh` run this script, so the
+function also works for them.
+
 An example:
 
 ```bash
@@ -342,8 +383,8 @@ Collection label.
 ./pds/bash_wrapper/create_psa_collection_jinja.sh [COLLECTION_NAME]
 ```
 
-`COLLECTION_NAME` is the name of the Collection (default
-`data_calibrated_efd`). Only letters, digits, `_` and `-` can be used. The
+`COLLECTION_NAME` is the name of the Collection (default: `COLLECTION_NAME` of
+the settings file). Only letters, digits, `_` and `-` can be used. The
 Collection directory is given in the environment variable `COLLECTION_DIR`.
 An example:
 
@@ -478,18 +519,29 @@ regularly, for example by cron, changes to the CDF files and the settings are
 carried over to the labels, the Collection and the Bundle.
 
 ```bash
-./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR]
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh [all] [BUNDLE_DIR] [SETTINGS_FILE...]
 ```
 
 | Argument | Meaning |
 |---|---|
 | `all` | Rebuild all products (`--all` also works) |
 | `BUNDLE_DIR` | Bundle directory (default `bc_mmo_pwi`) |
+| `SETTINGS_FILE` | Settings files of the Bundle, one per data Collection (default: the file in `PIPELINE_SETTINGS`, or `../user_config/pipeline_settings.sh`) |
+
+An example with three data Collections (the shell expands `*` to the matching
+file names):
+
+```bash
+./pds/bash_wrapper/cron_mk_cdf_to_pds.sh ~/pds/bc_mmo_hep ./pds/user_config/pipeline_settings_hep_*.sh
+```
+
+The script makes the labels and the Collection for each settings file, and then
+the Document and the Bundle once.
 
 The script assumes this layout:
 
 ```text
-BUNDLE_DIR/NAME/**/*.cdf                  data of each Collection NAME in DATA_COLLECTIONS (any directory under the Collection; labels are written in the same directory as the CDF)
+BUNDLE_DIR/NAME/**/*.cdf                  data of the Collection NAME (COLLECTION_NAME of each settings file; any directory under the Collection; labels are written in the same directory as the CDF)
 BUNDLE_DIR/document/*.pdf                 documents (the Document step is skipped if absent)
 ```
 
@@ -499,22 +551,19 @@ inputs is newer than the output:
 | Output | Inputs |
 |---|---|
 | Observational label (per CDF) | The CDF file, the dataset config file, the timeline (when `MISSION_TIMELINE` is set) |
-| Collection | Files and directories under the Collection directory (including added and removed ones) |
-| Document and Document Collection | The PDF (`PDF_FILE`) |
-| Bundle | The label of each Collection |
-| Every product | `label_templates/`, `user_config/`, the settings file, `bash_wrapper/` and the Python code of miopds_common |
+| Collection | Files and directories under the Collection directory (including added and removed ones), the dataset config file |
+| Document and Document Collection | The PDF (`PDF_FILE`), `INSTRUMENT_CONFIG` |
+| Bundle | The label of each Collection, `INSTRUMENT_CONFIG` |
+| Every product | `label_templates/`, `MISSION_CONFIG`, the settings file (the Document and the Bundle: the first file), `bash_wrapper/` and the Python code of miopds_common |
 
-Editing a template, a config file, the settings file or a script rebuilds
-every product. The script starts Python once per CDF file for the
-observational labels, so it takes time when many CDF files are rebuilt.
+Editing a template, `MISSION_CONFIG` or a script rebuilds every product. Editing
+a settings file rebuilds the products of its Collection and the Bundle, not the
+other Collections; editing the first file also rebuilds the Document. The script
+starts Python once per CDF file for the observational labels, so it takes time
+when many CDF files are rebuilt.
 
-Write these two in the settings file for the instrument (you do not edit the
-script):
-
-| What to write | Contents |
-|---|---|
-| `DATA_COLLECTIONS` | One `"NAME\|DATASET_CONFIG"` per data Collection, with its name and dataset config file. To add a Collection, add a line. If it is empty, or a line has no `\|`, the script stops |
-| The `set_label_args` function | Extra options passed to `cdf2pdslabel` for each CDF file (mission phase, internal reference, ...). `$1` is the CDF file; put the options in `LABEL_ARGS`. Without the function, no option is added |
+Write `COLLECTION_NAME`, the name of the data Collection, in each settings file.
+If it is not set, or two files have the same name, the script stops.
 
 | Environment variable | Meaning | Default |
 |---|---|---|
@@ -524,13 +573,16 @@ script):
 | `DOCUMENT_OUTPUT` | Document label name | `bc_mmo_pwi_data_user_guide.lblx` |
 | `COLLECTION_OUTPUT` | Document Collection label name | `collection_bc_mmo_pwi_document.lblx` |
 | `OUTPUT_FILE` | Bundle label name | The last part of `BUNDLE_DIR` + `.lblx` |
-| `DATASET_CONFIG` | Dataset config file (the sample settings file uses it in `DATA_COLLECTIONS`) | `user_config/dataset_pwi_efd.json` |
+| `DATASET_CONFIG` | Dataset config file of the Collection | `user_config/dataset_pwi_efd.json` |
 | `TEMPLATES_DIR` | Template directory | `label_templates/` |
-| `CONFIG_DIR` | Config file directory (an input of every product) | The directory of the settings file |
 | `LOCK_DIR` | Location of the lock | `$TMPDIR/miopds_cron_mk_cdf_to_pds_${BUNDLE_NAME}.lock` |
 
 The script runs by these rules:
 
+- Before making anything, it checks all the settings files. It stops if
+  `BUNDLE_NAME`, `MISSION_CONFIG`, `INSTRUMENT_CONFIG` or a Document value differs
+  between the files.
+- It uses the Python of the first settings file for all the steps.
 - Only one run at a time is allowed for the same bundle (the script uses a
   lock). If `TMPDIR` differs between cron and runs by hand, give a fixed place
   in `LOCK_DIR`. If a lock is left after an abnormal end, check that no other

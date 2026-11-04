@@ -16,6 +16,9 @@
 # Usage / 使い方:
 #   create_psa_collection_jinja.sh [COLLECTION_NAME]
 #
+#   Without COLLECTION_NAME, the name in the settings file is used.
+#   COLLECTION_NAME を渡さなければ、設定ファイルの名前を使う。
+#
 # Optional environment overrides:
 #   ARCHIVE_ROOT, BUNDLE_NAME, COLLECTION_DIR, LABEL_DIR,
 #   MISSION_TIMELINE, PIPELINE_SETTINGS, PYTHON, VALIDATE_ENABLED,
@@ -25,9 +28,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Settings of the instrument (README.md). Environment variables given when
-# running the script win over them.
-# 機器の設定を読む（README.md）。実行時に付けた環境変数のほうが優先される。
+# Read the settings file of one data Collection (README.md). Choose the file with
+# PIPELINE_SETTINGS (any name); without it, the default below is read. Environment
+# variables given when running the script win over the values in the file.
+# 1つのデータの Collection の設定ファイルを読む（README.md）。ファイルは
+# PIPELINE_SETTINGS で選ぶ（名前は自由）。指定がなければ下の既定のファイルを読む。
+# 実行時に付けた環境変数は、ファイルの値より優先される。
 PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_settings.sh}"
 [[ -r "$PIPELINE_SETTINGS" ]] || {
   echo "ERROR: settings file is not readable: $PIPELINE_SETTINGS" >&2
@@ -35,13 +41,13 @@ PIPELINE_SETTINGS="${PIPELINE_SETTINGS:-$SCRIPT_DIR/../user_config/pipeline_sett
   exit 1
 }
 SETTINGS_DIR="$(cd "$(dirname "$PIPELINE_SETTINGS")" && pwd)"
-# Exported as a full path, so that the child scripts read the same file
-# 子 shell も同じファイルを読むよう、絶対パスにして export する
-export PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
+# Use the full path: "source" searches PATH for a name without "/"
+# 絶対パスにする（source は、/ のない名前を PATH から探すため）
+PIPELINE_SETTINGS="$SETTINGS_DIR/${PIPELINE_SETTINGS##*/}"
 source "$PIPELINE_SETTINGS"
 
 # -- Archive and Collection settings -------------------------------------------
-COLLECTION_NAME="${1:-data_calibrated_efd}"
+COLLECTION_NAME="${1:-${COLLECTION_NAME:-data_calibrated_efd}}"
 BUNDLE_NAME="${BUNDLE_NAME:-bc_mmo_pwi}"
 
 # Root containing bundle directories such as bc_mmo_pwi (default: the current

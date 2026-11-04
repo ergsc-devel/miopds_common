@@ -1,8 +1,10 @@
-# Settings of the instrument for the shell scripts in bash_wrapper/ (PWI-EFD
+# Settings of one data Collection for the shell scripts in bash_wrapper/ (PWI-EFD
 # example). The scripts read this file with "source" when they start, so edit
-# this file for the instrument instead of the scripts.
-# bash_wrapper/ の shell が読む、機器ごとの設定（PWI-EFD の例）。shell は始めに
-# このファイルを source で読むので、shell ではなくこのファイルを機器に合わせて直す。
+# this file for the instrument instead of the scripts. Make one file per data
+# Collection, e.g. by copying this file; any file name works (README.md).
+# bash_wrapper/ の shell が読む、1つのデータの Collection の設定（PWI-EFD の例）。shell は
+# 始めにこのファイルを source で読むので、shell ではなくこのファイルを機器に合わせて直す。
+# データの Collection ごとに、このファイルをコピーして1つ作る。名前は自由（README.md）。
 #
 # Each value is written as VAR="${VAR:-value}", so an environment variable given
 # when running a script wins over the value here.
@@ -20,36 +22,24 @@
 # miopds_common をインストールした Python（例：~/mio_pds_validate/bin/python）
 PYTHON="${PYTHON:-python3}"
 
-# -- Config files / 設定ファイル ----------------------------------------------------
-MISSION_CONFIG="${MISSION_CONFIG:-$SETTINGS_DIR/mission.json}"
-INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-$SETTINGS_DIR/instrument_pwi.json}"
-# Dataset config for the scripts that work on one data Collection
-# 1つのデータの Collection を扱う shell が使う dataset の設定
+# -- This data Collection / このデータの Collection ----------------------------------
+# Name of the Collection. Its directory is BUNDLE_DIR/COLLECTION_NAME.
+# Collection の名前。ディレクトリは BUNDLE_DIR/COLLECTION_NAME になる。
+COLLECTION_NAME="${COLLECTION_NAME:-data_calibrated_efd}"
 DATASET_CONFIG="${DATASET_CONFIG:-$SETTINGS_DIR/dataset_pwi_efd.json}"
+# Name of the template file in label_templates/
+# label_templates/ の中のテンプレートのファイル名
+LABEL_TEMPLATE="${LABEL_TEMPLATE:-mmo_cdf_label_template_multi_dataset.xml.j2}"
 # Timeline (optional; empty: the mission phase in mission.json)
 # 期間表（任意。空なら mission.json のミッションフェーズを使う）
 MISSION_TIMELINE="${MISSION_TIMELINE:-}"
 
-# -- Bundle and data Collections / Bundle とデータの Collection ----------------------
-BUNDLE_NAME="${BUNDLE_NAME:-bc_mmo_pwi}"
-# Data Collections that cron_mk_cdf_to_pds.sh makes: one "NAME|DATASET_CONFIG"
-# per Collection. To add a Collection, add a line.
-# cron_mk_cdf_to_pds.sh が作るデータの Collection。Collection ごとに
-# 「名前|dataset の設定ファイル」を1行書く。Collection を足すときは行を足す。
-DATA_COLLECTIONS=(
-  "data_calibrated_efd|$DATASET_CONFIG"
-)
-
-# -- Observational labels / 観測ラベル ------------------------------------------------
-# Name of the template file in label_templates/
-# label_templates/ の中のテンプレートのファイル名
-LABEL_TEMPLATE="${LABEL_TEMPLATE:-mmo_cdf_label_template_multi_dataset.xml.j2}"
-
-# Extra options for cdf2pdslabel for each CDF file, used by cron_mk_cdf_to_pds.sh
+# Extra options for cdf2pdslabel for each CDF file, used by
+# make_pds_label_for_mmo_cdf_data.sh and the scripts that call it
 # (e.g. the mission phase or internal references derived from the file name).
 # $1 is the CDF file. Put the options in LABEL_ARGS.
-# cron_mk_cdf_to_pds.sh が CDF ごとに cdf2pdslabel に足すオプション
-# （ミッションフェーズや、ファイル名から作る internal reference など）。
+# make_pds_label_for_mmo_cdf_data.sh と、それを呼ぶ shell が、CDF ごとに cdf2pdslabel
+# に足すオプション（ミッションフェーズや、ファイル名から作る internal reference など）。
 # $1 は CDF ファイル。オプションは LABEL_ARGS に入れる。
 set_label_args() {
   LABEL_ARGS=()
@@ -57,6 +47,15 @@ set_label_args() {
   # LABEL_ARGS+=(--mission-phase-name Cruise --mission-phase-id cruise)
   # LABEL_ARGS+=(--internal-reference "urn:jaxa:darts:bc_mmo_pwi:document:pwi_data_user_guide::1.0|data_to_document")
 }
+
+# -- Common to the Bundle / Bundle に共通 --------------------------------------------
+# From here to the end of the Document values: write the same values in all the
+# settings files of a Bundle. cron_mk_cdf_to_pds.sh stops if they differ.
+# ここから Document の値の終わりまでは、同じ Bundle の設定ファイルすべてに同じ値を書く。
+# 違っていると cron_mk_cdf_to_pds.sh は止まる。
+BUNDLE_NAME="${BUNDLE_NAME:-bc_mmo_pwi}"
+MISSION_CONFIG="${MISSION_CONFIG:-$SETTINGS_DIR/mission.json}"
+INSTRUMENT_CONFIG="${INSTRUMENT_CONFIG:-$SETTINGS_DIR/instrument_pwi.json}"
 
 # -- Document -------------------------------------------------------------------
 # The PDF in BUNDLE_DIR/document/, and the names of the two labels made from it
